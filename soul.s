@@ -54,7 +54,12 @@ SET_GPIO:
 	.set GPIO_DR,				0x00
 	.set GPIO_GDIR,				0x04
 	.set GPIO_PSR,				0x08
+	.set GDIR_INIT				0xFFFC003E
 	
+	@inicializa o registrador de direcoes
+	ldr r1, =GPIO_BASE
+	mov r0, =GDIR_INIT
+	str r0, [r1, #GPIO_GDIR]
 
 @@@@@@ TZIC @@@@@@
 SET_TZIC:
