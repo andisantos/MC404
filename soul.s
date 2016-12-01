@@ -190,34 +190,37 @@ svc_set_motor_speed18:
 
 svc_set_motors_speed19:
 
-@@@@@
-@in: -
-@out: r0 = tempo do sistema
+@@@@@ GET_TIME @@@@@
+@ in: -
+@ out: r0 = tempo do sistema
 svc_get_time20:
-
-	ldmfd sp!, {r0}
-	stmfd sp!, {lr}
-
-	ldr r1, =SYS_TIME
-	ldr r1, [r1]
-	str r1, [r0]
-
-	ldmfd sp!, {lr}
-	mov pc,lr
+	@ muda para system
+    	msr cpsr_c, #0x1F
+    	ldmfd sp!, {r0}
+	
+	@ muda para supervisor
+	msr cpsr_c, #0x13
+	
+	ldr r1, =SYS_TIME	@ carrega end do tempo do sistema
+	ldr r0, [r1]		@ carrega em r0 o tempo do sistema
+	
+	ldmfd sp!, {r1-r12, pc}
 
 @@@@@@
 @in: r0 = tempo do sistema
 @out: -
 svc_set_time21:
+	@ muda para system
+    	msr cpsr_c, #0x1F
+    	ldmfd sp!, {r0}
+	
+	@ muda para supervisor
+	msr cpsr_c, #0x13
 
-	ldmfd sp!, {r0}
-	stmfd sp!, {lr}
+	mov r1, =SYS_TIME	@ carrega end do tempo do sistema
+	str r0, [r1]		@ guarda valor de r0 no tempo do sistema
 
-	mov r1, =SYS_TIME
-	str r0, [r1]
-
-	ldmfd sp!, {lr}
-	mov pc,lr
+	ldmfd sp!, {r1-r12, pc}
 
 @@@@@@
 @in: r0 = ponteiro pra funcaom a ser chamada
