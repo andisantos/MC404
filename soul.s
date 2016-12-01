@@ -189,3 +189,21 @@ CALLBACK_COUNTER:		.word 0x0
 
 @Contador de alarmes
 ALARMS_COUNTER:			.word 0x0
+
+@ pilha do usuario
+PILHA_USUARIO:
+
+@ pilha do FIQ
+PILHA_FIQ:
+
+@ pilha do Supervisor 
+PILHA_SUPERVISOR:
+
+@ pilha do abort
+PILHA_ABORT:
+
+@ pilha do irq 
+PILHA_IRQ:
+
+@ pilha do undefined
+PILHA_UNDEF:
