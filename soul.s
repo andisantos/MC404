@@ -104,6 +104,7 @@ SET_GPIO:
 	.set GPIO_GDIR,				0x04
 	.set GPIO_PSR,				0x08
 	.set GDIR_INIT				0xFFFC003E	
+	
 	@inicializa o registrador de direcoes
 	ldr r1, =GPIO_BASE
 	mov r0, =GDIR_INIT
@@ -164,12 +165,12 @@ SVC_HANDLER:
 	.set MAX_ALARMX, 		8
 	.set MAX_CALLBACKS,		8
 
-	stmfd sp!, {r1-r12,lr}
+	stmfd sp!, {r1-r12,lr}		@ salva os registradores do usuário na pilha do supervisor
 
 	cmp r7, #16
 	bleq svc_read_sonar16
 	cmp r7, #17
-	bleq svc_read_sonars17
+	bleq svc_register_proximity_callback17
 	cmp r7,	#18
 	bleq svc_set_motor_speed18
 	cmp r7, #19
@@ -182,18 +183,55 @@ SVC_HANDLER:
 	bleq svc_set_alarm22
 	b svc_end
 
+@@@@@ READ_SONAR @@@@@@
+@ in: r0 = indentificador do sonar (0 a 15)
+@ out: r0 = valor obtido pelos sonares
+@	    -1 caso o identificador do sonar for invalido
 svc_read_sonar16:
 
-svc_read_sonars17:
 
+@@@@@@ REGISTER PROXIMITY @@@@@@
+@ in: r0 = identificador do sonar (0 a 15)
+@     r1 = limiar de distancia
+@     r2 = ponteiro para a funcao a ser chamada caso tenha alarme
+@ out: r0 = -1 caso o num de callbacks máximo ativo no sistema seja maior do que MAX_CALLBACKS
+@	    -2 caso o identificador do sonar seja invalido
+	     0 caso contrario
+svc_register_proximity_callback17:
+
+
+@@@@@ MOTOR SPEED @@@@@@
+@ in: r0 = identificador do motor (0 ou 1)
+@     r1 = velocidade (0 a 63)
+@ out: r0 = -1 caso o id do motor for invalido
+@	    -2 caso a velocidade seja invalida
+@	     0 caso ok
 svc_set_motor_speed18:
+	msr cpsr_c, #0x1F       @ muda para system
+	ldmfd sp!, {r0,r1}
+	
+	msr cpsr_c, #0x13       @ muda para supervisor
+	
+	cmp r0, #0
+	b set_motor0
+
+	cmp r0, #1
+	b set_motor1
+	
+	mov r0, #-1
+	b 
+	
+set_motor0:
+
+set_motor1:
+
 
 @@@@@@ SPEED MOTORS @@@@@@
-@in: r0 = velocidade do motor 0 (0 a 63)
-@    r1 = velocidade do motor 1 (0 a 63)
-@out: r0 = 	-1 caso a velocidade do motor 0 seja invalida
-@		-2 caso a velocidade do motor 1 seja invalida
-@		 0 caso Ok
+@ in: r0 = velocidade do motor 0 (0 a 63)
+@     r1 = velocidade do motor 1 (0 a 63)
+@ out: r0 = -1 caso a velocidade do motor 0 seja invalida
+@	    -2 caso a velocidade do motor 1 seja invalida
+@	     0 caso Ok
 svc_set_motors_speed19:
 	msr cpsr_c, #0x1F       @ muda para system
 	ldmfd sp!, {r0,r1}
@@ -203,12 +241,12 @@ svc_set_motors_speed19:
 	@verifica se a velocidade do motor 1 eh valida
 	cmp r0, #63
 	movhi r0, #-1
-	bhi fim_motors_speed
+	bhi svc_end
 
 	@verifica se a velocidade do motor 2 eh valida
 	cmp r1, #63
 	movhi r0, #-2
-	bhi	fim_motors_speed
+	bhi svc_end
 
 	ldr r2, =GPIO_BASE
 	ldr r3, [r2, #GPIO_DR]
@@ -220,10 +258,7 @@ svc_set_motors_speed19:
 	and r3, r3, r0
 
 	@coloca 0 na flag
-	mov r0, #0
-
-fim_motors_speed:
-	ldmfd sp!, {r1-r12, pc}		
+	mov r0, #0	
 
 
 @@@@@@ GET_TIME @@@@@@
@@ -240,11 +275,12 @@ svc_get_time20:
 	ldr r1, =SYS_TIME	@ carrega end do tempo do sistema
 	ldr r0, [r1]		@ carrega em r0 o tempo do sistema
 	
-	ldmfd sp!, {r1-r12, pc}
+	b svc_end
 
-@@@@@@
-@in: r0 = tempo do sistema
-@out: -
+
+@@@@@@ SET_TIME @@@@@@
+@ in: r0 = tempo do sistema
+@ out: -
 svc_set_time21:
 	@ muda para system
     	msr cpsr_c, #0x1F
@@ -256,19 +292,21 @@ svc_set_time21:
 	mov r1, =SYS_TIME	@ carrega end do tempo do sistema
 	str r0, [r1]		@ guarda valor de r0 no tempo do sistema
 
-	ldmfd sp!, {r1-r12, pc}
+	b svc_end
 
-@@@@@@
-@in: r0 = ponteiro pra funcaom a ser chamada
-@    r1 = tempo do sistema
-@out: r0 = -1 se numero maximo de alarmes for maior que MAX_ALARMS
-@	   -2 se tempo for menor que o tempo do atual do sistema
-@           0 caso contrario
+
+@@@@@@ SET_ALARM @@@@@@
+@ in: r0 = ponteiro pra funcaom a ser chamada
+@     r1 = tempo do sistema
+@ out: r0 = -1 se numero maximo de alarmes for maior que MAX_ALARMS
+@	    -2 se tempo for menor que o tempo do atual do sistema
+@            0 caso contrario
 svc_set_alarm22:
 
+
 svc_end:
-	ldmfd sp!, {r0-r12, lr}
-	movs pc,lr
+	ldmfd sp!, {r1-r12, pc}
+
 
 
 @@@@@@ DATA @@@@@@
