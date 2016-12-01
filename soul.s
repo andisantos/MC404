@@ -135,6 +135,7 @@ SVC_HANDLER:
 .data 
 
 @Numero de call backs
+@ se der bosta, tirar os .words bjs
 
 @Tempo do sistema
 SYS_TIME: 				.word 0x0
