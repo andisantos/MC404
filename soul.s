@@ -207,23 +207,43 @@ svc_register_proximity_callback17:
 @	    -2 caso a velocidade seja invalida
 @	     0 caso ok
 svc_set_motor_speed18:
-	msr cpsr_c, #0x1F       @ muda para system
+	msr cpsr_c, #0x1F       	@ muda para system
 	ldmfd sp!, {r0,r1}
 	
-	msr cpsr_c, #0x13       @ muda para supervisor
-	
-	cmp r0, #0
+	msr cpsr_c, #0x13       	@ muda para supervisor
+    
+   	cmp r1, #63			@ confere se velocidade é menor que 63
+	movhi r0, #-2			@ se não retorna -2
+	bhi	svc_end
+
+	ldr r2, =GPIO_BASE		@ carrega valor de DR
+	ldr r3, [r2, #GPIO_DR]
+        
+	cmp r0, #0			@ se r0 for 0, seta a velocidade no motor0
 	b set_motor0
 
-	cmp r0, #1
+	cmp r0, #1			@ se r0 for 1, seta a velocidade no motor1
 	b set_motor1
 	
-	mov r0, #-1
-	b 
+	mov r0, #-1			@ se o identificador do motor for invalido, retorna -1
+	b svc_end
 	
 set_motor0:
-
+	lsl r1, #19			@ coloca o valor da velocidade nos bits 19-24
+	bic r3, r3, #0xFE0000		@ zera os bits 18-24 de DR
+	add r3, r3, r1			@ seta a velocidade em r3
+	str r3, [r2, #GPIO_DR]		@ guarda o valor em DR
+	mov r0, #0
+	b svc_end
+    
 set_motor1:
+	lsl r1, #26			@ coloca o valor da velocidade nos bits 26-31
+	bic r3, r3, #0x7F000000		@ zera os bits 25-31 de DR
+	add r3, r3, r1			@ seta a velocidade em r3
+	str r3, [r2, #GPIO_DR]		@ guarda o valor em DR
+	mov r0, #0	
+	b svc_end
+
 
 
 @@@@@@ SPEED MOTORS @@@@@@
@@ -238,27 +258,29 @@ svc_set_motors_speed19:
 
 	msr cpsr_c, #0x13       @ muda para supervisor
 
-	@verifica se a velocidade do motor 1 eh valida
+	@ verifica se a velocidade do motor 1 eh valida
 	cmp r0, #63
 	movhi r0, #-1
 	bhi svc_end
 
-	@verifica se a velocidade do motor 2 eh valida
+	@ verifica se a velocidade do motor 2 eh valida
 	cmp r1, #63
 	movhi r0, #-2
 	bhi svc_end
 
-	ldr r2, =GPIO_BASE
+	ldr r2, =GPIO_BASE		@ carrega valor de DR
 	ldr r3, [r2, #GPIO_DR]
 
-	lsl r0, #7
+	lsl r0, #19			@ coloca o valor da velocidade nos bits 19-24
+	lsl r1, #26			@ coloca o valor da velocidade nos bits 26-31
 	add r0, r0, r1
+	
+	bic r3, r3, #0x7FFE0000		@ zera os bits 18-31 de r3 para colocar as velocidades
+	add r3, r3, r0			@ coloca as velocidades em r3
+	str r3, [r2, #GPIO_DR]		@ guarda o valor em DR
 
-	orr r0, #0x7FFFFFFF
-	and r3, r3, r0
-
-	@coloca 0 na flag
-	mov r0, #0	
+	mov r0, #0			@ coloca 0 na flag
+	b svc_end
 
 
 @@@@@@ GET_TIME @@@@@@
