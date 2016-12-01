@@ -125,9 +125,48 @@ SET_TZIC:
 	mov	r0, #1
 	str	r0, [r1, #TZIC_INTCTRL]
 
+
 @@@@@@ SVC HANDLER @@@@@@
 
 SVC_HANDLER:
+	.set MAX_ALARMX, 		8
+	.set MAX_CALLBACKS,		8
+
+	stmfd sp!, {r1-r12,lr}
+
+	cmp r7, #16
+	bleq svc_read_sonar16
+	cmp r7, #17
+	bleq svc_read_sonars17
+	cmp r7,	#18
+	bleq svc_set_motor_speed18
+	cmp r7, #19
+	bleq svc_set_motors_speed19
+	cmp r7, #20
+	bleq svc_get_time20
+	cmp r7, #21
+	bleq svc_set_time21
+	cmp r7, #22
+	bleq svc_set_alarm22
+	b svc_end
+
+svc_read_sonar16:
+
+svc_read_sonars17:
+
+svc_set_motor_speed18:
+
+svc_set_motors_speed19:
+
+svc_get_time20:
+
+svc_set_time21:
+
+svc_set_alarm22:
+
+svc_end:
+	ldmfd sp!, {r1-r12, lr}
+	movs pc,lr
 
 
 @@@@@@ DATA @@@@@@
