@@ -190,10 +190,10 @@ svc_set_motor_speed18:
 
 @@@@@@ SPEED MOTORS @@@@@@
 @in: r0 = velocidade do motor 0 (0 a 63)
-@	 r1 = velocidade do motor 1 (0 a 63)
+@    r1 = velocidade do motor 1 (0 a 63)
 @out: r0 = 	-1 caso a velocidade do motor 0 seja invalida
-@			-2 caso a velocidade do motor 1 seja invalida
-@			 0 caso Ok
+@		-2 caso a velocidade do motor 1 seja invalida
+@		 0 caso Ok
 svc_set_motors_speed19:
 	ldmfd sp!, {r0,r1}
 	stmfd sp!, {r4,lr}
@@ -211,9 +211,19 @@ svc_set_motors_speed19:
 	ldr r2, =GPIO_BASE
 	ldr r3, [r2, #GPIO_DR]
 
-	@Reseta as velocidades e escreve
-	ldr r4, =0xFFFC
-	bic r3,r3,r4, lsl #16
+	lsl r0, #7
+	add r0, r0, r1
+
+	orr r0, #0x7FFFFFFF
+	and r3, r3, r0
+
+	@coloca 0 na flag
+	mov r0, #0
+
+fim_motors_speed:
+	ldmfd sp!,{r4,lr}
+	mov pc,lr			
+
 
 @@@@@@ GET_TIME @@@@@@
 @ in: -
