@@ -40,6 +40,33 @@ RESET_HANDLER:
    	str r0, [r1]
 
 
+@@@@@@ INICIALIZA PILHAS @@@@@@
+
+    @ inicializa PILHA_USUARIO
+    msr cpsr_c, #0x1F
+    ldr sp!, =PILHA_USUARIO
+
+    @ inicializa PILHA_FIQ
+    msr cpsr_c, #0x11
+    ldr sp!, =PILHA_FIQ
+
+    @ inicializa PILHA_IRQ
+    msr cpsr_c, #0x12
+    ldr sp!, =PILHA_IRQ
+
+    @ inicializa PILHA_SUPERVISOR
+    msr cpsr_c, #0x13
+    ldr sp!, =PILHA_SUPERVISOR
+
+    @ inicializa PILHA_ABORT
+    msr cpsr_c, #0x17
+    ldr sp!, =PILHA_ABORT
+
+    @ inicializa PILHA_UNDEF
+    msr cpsr_c, #0x1B
+    ldr sp!, =PILHA_UNDEF
+    
+
 @@@@@@ GPT @@@@@@
 
 SET_GPT:
