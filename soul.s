@@ -195,8 +195,10 @@ svc_set_motor_speed18:
 @		-2 caso a velocidade do motor 1 seja invalida
 @		 0 caso Ok
 svc_set_motors_speed19:
+	msr cpsr_c, #0x1F       @ muda para system
 	ldmfd sp!, {r0,r1}
-	stmfd sp!, {r4,lr}
+
+	msr cpsr_c, #0x13       @ muda para supervisor
 
 	@verifica se a velocidade do motor 1 eh valida
 	cmp r0, #63
@@ -221,8 +223,7 @@ svc_set_motors_speed19:
 	mov r0, #0
 
 fim_motors_speed:
-	ldmfd sp!,{r4,lr}
-	mov pc,lr			
+	ldmfd sp!, {r1-r12, pc}		
 
 
 @@@@@@ GET_TIME @@@@@@
