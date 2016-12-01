@@ -3,7 +3,7 @@
 .org 0x0
 .section .iv,"a"
 
-@@@@@@ vetores de interrupções @@@@@@
+@@@@@@ vetores de interrupcoes @@@@@@
 
 interrupt_vector:
 
