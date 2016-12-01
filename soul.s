@@ -248,20 +248,26 @@ CALLBACK_COUNTER:		.word 0x0
 @Contador de alarmes
 ALARMS_COUNTER:			.word 0x0
 
+.skip 600
 @ pilha do usuario
 PILHA_USUARIO:
 
+.skip 600
 @ pilha do FIQ
 PILHA_FIQ:
 
+.skip 600
 @ pilha do Supervisor 
 PILHA_SUPERVISOR:
 
+.skip 600
 @ pilha do abort
 PILHA_ABORT:
 
+.skip 600
 @ pilha do irq 
 PILHA_IRQ:
 
+.skip 600
 @ pilha do undefined
 PILHA_UNDEF:
