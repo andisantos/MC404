@@ -18,6 +18,26 @@ interrupt_vector:
 .org 0x100
 .text
 
+
+RESET_HANDLER:
+    
+	@Set interrupt table base address on coprocessor 15.
+	ldr r0, =interrupt_vector
+	mcr p15, 0, r0, c12, c0, 0
+
+	mov r0, #0
+
+	@Zera o tempo do sistema, o contador de callbacks e de alarmes
+	ldr r1, =SYS_TIME
+	str r0, [r1]
+
+   	ldr r1, =CALLBACK_COUNTER
+   	str r0, [r1]
+
+   	ldr r1, =ALARMS_COUNTER
+   	str r0, [r1]
+
+
 @@@@@@ GPT @@@@@@
 
 SET_GPT:
@@ -54,7 +74,13 @@ SET_GPIO:
 	.set GPIO_DR,				0x00
 	.set GPIO_GDIR,				0x04
 	.set GPIO_PSR,				0x08
-	
+		
+	@inicializa o registrador de direcoes
+	ldr r1, =GPIO_BASE
+	mov r0, =GDIR_INIT
+	str r0, [r1, #GPIO_GDIR]
+
+
 
 @@@@@@ TZIC @@@@@@
 SET_TZIC:
