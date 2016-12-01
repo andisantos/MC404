@@ -135,4 +135,12 @@ SVC_HANDLER:
 .data 
 
 @Numero de call backs
-SYS_TIME: 	.word 0x0
+
+@Tempo do sistema
+SYS_TIME: 				.word 0x0
+
+@Contador de call backs
+CALLBACK_COUNTER:		.word 0x0
+
+@Contador de alarmes
+ALARMS_COUNTER:			.word 0x0
