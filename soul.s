@@ -3,6 +3,8 @@
 .org 0x0
 .section .iv,"a"
 
+.set base_vet,  0x0
+
 @@@@@@ vetores de interrupcoes @@@@@@
 
 interrupt_vector:
@@ -127,6 +129,9 @@ SET_TZIC:
 
 
 @@@@@@ SVC HANDLER @@@@@@
+@ salvar a pilha do usuario e cpsr
+@ salvar os registradores
+@ trocar o modo para SUPERVISOR
 
 SVC_HANDLER:
 	.set MAX_ALARMX, 		8
