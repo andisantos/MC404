@@ -18,6 +18,44 @@ interrupt_vector:
 .org 0x100
 .text
 
+@@@@@@ GPT @@@@@@
+
+SET_GPT:
+	.set GPT_BASE,				0x53FA0000
+	.set GPT_CR,				0x0
+	.set GPT_PR,				0x4
+	.set GPT_OCR1,				0x10
+	.set GPT_IR,				0xC
+	.set TIME_SZ,				100
+
+	ldr r1, =GPT_BASE
+
+	@habilitando o GPT e configurando clock_src
+	ldr r1, =GPT_BASE
+	
+	mov r0, #0x41
+	str r0, [r1, #GPT_CR]
+
+	@zera o prescaler
+	mov r0, #0x0
+	str r0, [r1, #GPT_PR]
+
+	@tempo para acontecer a interrupcao
+	mov r0, =TIME_SZ
+	str r0, [r1, #GPT_OCR1]
+
+	@habilitando a interrupcao Output Compare Channel 1
+	mov r0, #0x1
+	str r0, [r1, #GPT_IR]
+
+@@@@@@ GPIO @@@@@@
+SET_GPIO:
+	.set GPIO_BASE, 			0x53F84000
+	.set GPIO_DR,				0x00
+	.set GPIO_GDIR,				0x04
+	.set GPIO_PSR,				0x08
+	
+
 @@@@@@ TZIC @@@@@@
 SET_TZIC:
 
@@ -61,18 +99,15 @@ SET_TZIC:
     mov	r0, #1
     str	r0, [r1, #TZIC_INTCTRL]
 
-@@@@@@ GPT @@@@@@
-
-SET_GPT:
-	
-
 @@@@@@ SVC HANDLER @@@@@@
 
 SVC_HANDLER:
+
 
 @@@@@@ DATA @@@@@@
 
 .data 
 
-@Numero de call back
-SYS_TIME: .word 0x0
+@Numero de call backs
+SYS_TIME: 	.word 0x0
+
