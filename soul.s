@@ -163,14 +163,45 @@ svc_set_motor_speed18:
 
 svc_set_motors_speed19:
 
+@@@@@
+@in: -
+@out: r0 = tempo do sistema
 svc_get_time20:
 
+	ldmfd sp!, {r0}
+	stmfd sp!, {lr}
+
+	ldr r1, =SYS_TIME
+	ldr r1, [r1]
+	str r1, [r0]
+
+	ldmfd sp!, {lr}
+	mov pc,lr
+
+@@@@@@
+@in: r0 = tempo do sistema
+@out: -
 svc_set_time21:
 
+	ldmfd sp!, {r0}
+	stmfd sp!, {lr}
+
+	mov r1, =SYS_TIME
+	str r0, [r1]
+
+	ldmfd sp!, {lr}
+	mov pc,lr
+
+@@@@@@
+@in: r0 = ponteiro pra funcaom a ser chamada
+@    r1 = tempo do sistema
+@out: r0 = -1 se numero maximo de alarmes for maior que MAX_ALARMS
+@	   -2 se tempo for menor que o tempo do atual do sistema
+@           0 caso contrario
 svc_set_alarm22:
 
 svc_end:
-	ldmfd sp!, {r1-r12, lr}
+	ldmfd sp!, {r0-r12, lr}
 	movs pc,lr
 
 
