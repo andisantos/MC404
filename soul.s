@@ -188,9 +188,34 @@ svc_read_sonars17:
 
 svc_set_motor_speed18:
 
+@@@@@@ SPEED MOTORS @@@@@@
+@in: r0 = velocidade do motor 0 (0 a 63)
+@	 r1 = velocidade do motor 1 (0 a 63)
+@out: r0 = 	-1 caso a velocidade do motor 0 seja invalida
+@			-2 caso a velocidade do motor 1 seja invalida
+@			 0 caso Ok
 svc_set_motors_speed19:
+	ldmfd sp!, {r0,r1}
+	stmfd sp!, {r4,lr}
 
-@@@@@ GET_TIME @@@@@
+	@verifica se a velocidade do motor 1 eh valida
+	cmp r0, #63
+	movhi r0, #-1
+	bhi fim_motors_speed
+
+	@verifica se a velocidade do motor 2 eh valida
+	cmp r1, #63
+	movhi r0, #-2
+	bhi	fim_motors_speed
+
+	ldr r2, =GPIO_BASE
+	ldr r3, [r2, #GPIO_DR]
+
+	@Reseta as velocidades e escreve
+	ldr r4, =0xFFFC
+	bic r3,r3,r4, lsl #16
+
+@@@@@@ GET_TIME @@@@@@
 @ in: -
 @ out: r0 = tempo do sistema
 svc_get_time20:
