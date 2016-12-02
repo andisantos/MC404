@@ -196,7 +196,7 @@ svc_read_sonar16:
 @     r2 = ponteiro para a funcao a ser chamada caso tenha alarme
 @ out: r0 = -1 caso o num de callbacks máximo ativo no sistema seja maior do que MAX_CALLBACKS
 @	    -2 caso o identificador do sonar seja invalido
-	     0 caso contrario
+@	     0 caso contrario
 svc_register_proximity_callback17:
 
 
@@ -339,7 +339,7 @@ svc_end:
 @ se der bosta, tirar os .words bjs
 
 @Tempo do sistema
-SYS_TIME: 				.word 0x0
+SYS_TIME: 			.word 0x0
 
 @Contador de call backs
 CALLBACK_COUNTER:		.word 0x0
