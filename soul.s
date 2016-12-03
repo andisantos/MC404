@@ -320,7 +320,7 @@ svc_set_time21:
 	@ muda para supervisor
 	msr cpsr_c, #0x13
 
-	mov r1, =SYS_TIME	@ carrega end do tempo do sistema
+	ldr r1, =SYS_TIME	@ carrega end do tempo do sistema
 	str r0, [r1]		@ guarda valor de r0 no tempo do sistema
 
 	b svc_end
