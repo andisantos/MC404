@@ -1,5 +1,11 @@
 .align 4
 
+@ Modos de Execução
+.set USER_MODE,         	 0x10
+.set IRQ_MODE,          	 0x12
+.set SUPERVISOR_MODE,    	 0x13
+.set SYS_MODE,            	 0x3F
+.set USER_TEXT,				 0x77802000
 .org 0x0
 .section .iv,"a"
 
@@ -43,15 +49,15 @@ RESET_HANDLER:
 @@@@@@ INICIALIZA PILHAS @@@@@@
 
    @ inicializa PILHA_USUARIO
-    msr cpsr_c, #0x1F
+    msr cpsr_c, #SYS_MODE
     ldr sp, =PILHA_USUARIO
 
     @ inicializa PILHA_IRQ
-    msr cpsr_c, #0x12
+    msr cpsr_c, #IRQ_MODE
     ldr sp, =PILHA_IRQ
 
     @ inicializa PILHA_SUPERVISOR
-    msr cpsr_c, #0x13
+    msr cpsr_c, #SUPERVISOR_MODE
     ldr sp, =PILHA_SUPERVISOR
 
 
@@ -64,6 +70,7 @@ SET_GPT:
 	.set GPT_SR,                0x8
 	.set GPT_OCR1,				0x10
 	.set GPT_IR,				0xC
+
 	.set TIME_SZ,				100
 
 	ldr r1, =GPT_BASE
@@ -92,14 +99,18 @@ SET_GPIO:
 	.set GPIO_DR,				0x00
 	.set GPIO_GDIR,				0x04
 	.set GPIO_PSR,				0x08
-	.set GDIR_INIT,				0xFFFC003E	
-	
-	@inicializa o registrador de direcoes
+	.set GDIR_INIT,				0xFFFC003E
+
 	ldr r1, =GPIO_BASE
+
+	@inicializa o registrador de direcoes 
 	ldr r0, =GDIR_INIT
 	str r0, [r1, #GPIO_GDIR]
 
 
+	msr cpsr_c, #USER_MODE
+	ldr r1, =USER_TEXT			@muda para o modo usuario
+	mov pc, r1					@pula para o codigo do usuario
 
 @@@@@@ TZIC @@@@@@
 SET_TZIC:
@@ -144,6 +155,8 @@ SET_TZIC:
 	mov	r0, #1
 	str	r0, [r1, #TZIC_INTCTRL]
 
+	msr cpsr_c, #SUPERVISOR_MODE
+
 
 @@@@@@ SVC HANDLER @@@@@@
 @ salvar a pilha do usuario e cpsr
@@ -177,9 +190,9 @@ SVC_HANDLER:
 @ out: r0 = valor obtido pelos sonares
 @	    -1 caso o identificador do sonar for invalido
 svc_read_sonar16:
-	msr cpsr_c, #0x1F      		@ muda para system
+	msr cpsr_c, #SYS_MODE      		@ muda para system
 	ldmfd sp!, {r0}
-	msr cpsr_c, #0x13       	@ muda para supervisor
+	msr cpsr_c, #SUPERVISOR_MODE   	@ muda para supervisor
 
 	cmp r0, #15			@verifica se eh um sonar valido
 	movhi r0, #-1
@@ -193,8 +206,8 @@ svc_read_sonar16:
 @     r1 = limiar de distancia
 @     r2 = ponteiro para a funcao a ser chamada caso tenha alarme
 @ out: r0 = -1 caso o num de callbacks máximo ativo no sistema seja maior do que MAX_CALLBACKS
-@	    -2 caso o identificador do sonar seja invalido
-@	     0 caso contrario
+@	   		-2 caso o identificador do sonar seja invalido
+@	     	0 caso contrario
 svc_register_proximity_callback17:
 
 
@@ -205,11 +218,12 @@ svc_register_proximity_callback17:
 @	    -2 caso a velocidade seja invalida
 @	     0 caso ok
 svc_set_motor_speed18:
-	msr cpsr_c, #0x1F       	@ muda para system
+	msr cpsr_c, #SYS_MODE       	@ muda para system
+
 	ldmfd sp!, {r0,r1}
 	
-	msr cpsr_c, #0x13       	@ muda para supervisor
-    
+	msr cpsr_c, #SUPERVISOR_MODE      	@ muda para supervisor
+   
    	cmp r1, #63			@ confere se velocidade é menor que 63
 	movhi r0, #-2			@ se não retorna -2
 	bhi svc_end
@@ -218,10 +232,10 @@ svc_set_motor_speed18:
 	ldr r3, [r2, #GPIO_DR]
         
 	cmp r0, #0			@ se r0 for 0, seta a velocidade no motor0
-	b set_motor0
+	beq set_motor0
 
 	cmp r0, #1			@ se r0 for 1, seta a velocidade no motor1
-	b set_motor1
+	beq set_motor1
 	
 	mov r0, #-1			@ se o identificador do motor for invalido, retorna -1
 	b svc_end
@@ -251,10 +265,10 @@ set_motor1:
 @	    -2 caso a velocidade do motor 1 seja invalida
 @	     0 caso Ok
 svc_set_motors_speed19:
-	msr cpsr_c, #0x1F       @ muda para system
+	msr cpsr_c, #SYS_MODE       @ muda para system
 	ldmfd sp!, {r0,r1}
 
-	msr cpsr_c, #0x13       @ muda para supervisor
+	msr cpsr_c, #SUPERVISOR_MODE       @ muda para supervisor
 
 	@ verifica se a velocidade do motor 1 eh valida
 	cmp r0, #63
@@ -276,16 +290,13 @@ svc_set_motors_speed19:
 	ldr r4, =mask_vels
    	ldr r4, [r4]
 
-    	@ zera os bits de r3 para colocar as velocidades
+    @ zera os bits de r3 para colocar as velocidades
 	bic r3, r3, r4
 	add r3, r3, r0
 
-	@coloca 0 na flag
-	mov r0, #0
-
 	str r3, [r2, #GPIO_DR]		@ guarda o valor em DR
-
-	mov r0, #0			@ coloca 0 na flag
+	mov r0, #0					@ coloca 0 na flag
+	
 	b svc_end
 
 
@@ -294,11 +305,11 @@ svc_set_motors_speed19:
 @ out: r0 = tempo do sistema
 svc_get_time20:
 	@ muda para system
-    	msr cpsr_c, #0x1F
-    	ldmfd sp!, {r0}
+    msr cpsr_c, #SYS_MODE
+    ldmfd sp!, {r0}
 	
 	@ muda para supervisor
-	msr cpsr_c, #0x13
+	msr cpsr_c, #SUPERVISOR_MODE
 	
 	ldr r1, =SYS_TIME	@ carrega end do tempo do sistema
 	ldr r0, [r1]		@ carrega em r0 o tempo do sistema
@@ -311,11 +322,11 @@ svc_get_time20:
 @ out: -
 svc_set_time21:
 	@ muda para system
-    	msr cpsr_c, #0x1F
-    	ldmfd sp!, {r0}
+	msr cpsr_c, #SYS_MODE
+	ldmfd sp!, {r0}
 	
 	@ muda para supervisor
-	msr cpsr_c, #0x13
+	msr cpsr_c, #SUPERVISOR_MODE
 
 	ldr r1, =SYS_TIME	@ carrega end do tempo do sistema
 	str r0, [r1]		@ guarda valor de r0 no tempo do sistema
@@ -336,6 +347,7 @@ svc_end:
 	ldmfd sp!, {r1-r12, pc}
 
 IRQ_HANDLER:
+
     ldr r1, =GPT_BASE
 
     mov r0, #0x1
@@ -364,7 +376,7 @@ mask_vels:              .word 0x7FFE0000
 @ se der bosta, tirar os .words bjs
 
 @Tempo do sistema
-SYS_TIME: 			.word 0x0
+SYS_TIME: 				.word 0x0
 
 @Contador de call backs
 CALLBACK_COUNTER:		.word 0x0
