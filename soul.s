@@ -267,7 +267,7 @@ svc_set_motors_speed19:
 	@ verifica se a velocidade do motor 2 eh valida
 	cmp r1, #63
 	movhi r0, #-2
-	bhi svc_end
+	bhi vc_end
 
 	ldr r2, =GPIO_BASE		@ carrega valor de DR
 	ldr r3, [r2, #GPIO_DR]
@@ -276,8 +276,16 @@ svc_set_motors_speed19:
 	lsl r1, #26			@ coloca o valor da velocidade nos bits 26-31
 	add r0, r0, r1
 	
-	bic r3, r3, #0x7FFE0000		@ zera os bits 18-31 de r3 para colocar as velocidades
-	add r3, r3, r0			@ coloca as velocidades em r3
+	ldr r4, =mask_vels
+   	ldr r4, [r4]
+
+    	@ zera os bits de r3 para colocar as velocidades
+	bic r3, r3, r4
+	add r3, r3, r0
+
+	@coloca 0 na flag
+	mov r0, #0
+
 	str r3, [r2, #GPIO_DR]		@ guarda o valor em DR
 
 	mov r0, #0			@ coloca 0 na flag
