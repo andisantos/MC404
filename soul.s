@@ -360,6 +360,9 @@ IRQ_HANDLER:
 
 CONTADOR:
 
+@ mascara para dr
+mask_vels:              .word 0x7FFE0000
+
 @Numero de call backs
 @ se der bosta, tirar os .words bjs
 
