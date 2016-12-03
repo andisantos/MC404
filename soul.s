@@ -188,6 +188,18 @@ SVC_HANDLER:
 @ out: r0 = valor obtido pelos sonares
 @	    -1 caso o identificador do sonar for invalido
 svc_read_sonar16:
+	msr cpsr_c, #0x1F      		@ muda para system
+	ldmfd sp!, {r0}
+	msr cpsr_c, #0x13       	@ muda para supervisor
+
+	cmp r0, #15			@verifica se eh um sonar valido
+	movhi r0, #-1
+	bhi svc_end
+
+	ldr r1, =GPIO_BASE
+	ldr r2, [r1, #GPIO_DR]
+
+	ldr r3, []
 
 
 @@@@@@ REGISTER PROXIMITY @@@@@@
