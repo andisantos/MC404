@@ -42,30 +42,18 @@ RESET_HANDLER:
 
 @@@@@@ INICIALIZA PILHAS @@@@@@
 
-    @ inicializa PILHA_USUARIO
+   @ inicializa PILHA_USUARIO
     msr cpsr_c, #0x1F
-    ldr sp!, =PILHA_USUARIO
-
-    @ inicializa PILHA_FIQ
-    msr cpsr_c, #0x11
-    ldr sp!, =PILHA_FIQ
+    ldr sp, =PILHA_USUARIO
 
     @ inicializa PILHA_IRQ
     msr cpsr_c, #0x12
-    ldr sp!, =PILHA_IRQ
+    ldr sp, =PILHA_IRQ
 
     @ inicializa PILHA_SUPERVISOR
     msr cpsr_c, #0x13
-    ldr sp!, =PILHA_SUPERVISOR
+    ldr sp, =PILHA_SUPERVISOR
 
-    @ inicializa PILHA_ABORT
-    msr cpsr_c, #0x17
-    ldr sp!, =PILHA_ABORT
-
-    @ inicializa PILHA_UNDEF
-    msr cpsr_c, #0x1B
-    ldr sp!, =PILHA_UNDEF
-    
 
 @@@@@@ GPT @@@@@@
 
@@ -73,6 +61,7 @@ SET_GPT:
 	.set GPT_BASE,				0x53FA0000
 	.set GPT_CR,				0x0
 	.set GPT_PR,				0x4
+	.set GPT_SR,                0x8
 	.set GPT_OCR1,				0x10
 	.set GPT_IR,				0xC
 	.set TIME_SZ,				100
@@ -90,7 +79,7 @@ SET_GPT:
 	str r0, [r1, #GPT_PR]
 
 	@tempo para acontecer a interrupcao
-	mov r0, =TIME_SZ
+	ldr r0, =TIME_SZ
 	str r0, [r1, #GPT_OCR1]
 
 	@habilitando a interrupcao Output Compare Channel 1
@@ -103,11 +92,11 @@ SET_GPIO:
 	.set GPIO_DR,				0x00
 	.set GPIO_GDIR,				0x04
 	.set GPIO_PSR,				0x08
-	.set GDIR_INIT				0xFFFC003E	
+	.set GDIR_INIT,				0xFFFC003E	
 	
 	@inicializa o registrador de direcoes
 	ldr r1, =GPIO_BASE
-	mov r0, =GDIR_INIT
+	ldr r0, =GDIR_INIT
 	str r0, [r1, #GPIO_GDIR]
 
 
@@ -347,6 +336,8 @@ svc_end:
 
 .data 
 
+CONTADOR:
+
 @Numero de call backs
 @ se der bosta, tirar os .words bjs
 
@@ -364,21 +355,9 @@ ALARMS_COUNTER:			.word 0x0
 PILHA_USUARIO:
 
 .skip 600
-@ pilha do FIQ
-PILHA_FIQ:
-
-.skip 600
 @ pilha do Supervisor 
 PILHA_SUPERVISOR:
 
 .skip 600
-@ pilha do abort
-PILHA_ABORT:
-
-.skip 600
 @ pilha do irq 
 PILHA_IRQ:
-
-.skip 600
-@ pilha do undefined
-PILHA_UNDEF:
