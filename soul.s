@@ -188,9 +188,6 @@ svc_read_sonar16:
 	ldr r1, =GPIO_BASE
 	ldr r2, [r1, #GPIO_DR]
 
-	ldr r3, []
-
-
 @@@@@@ REGISTER PROXIMITY @@@@@@
 @ in: r0 = identificador do sonar (0 a 15)
 @     r1 = limiar de distancia
@@ -215,7 +212,7 @@ svc_set_motor_speed18:
     
    	cmp r1, #63			@ confere se velocidade é menor que 63
 	movhi r0, #-2			@ se não retorna -2
-	bhi	svc_end
+	bhi svc_end
 
 	ldr r2, =GPIO_BASE		@ carrega valor de DR
 	ldr r3, [r2, #GPIO_DR]
@@ -267,7 +264,7 @@ svc_set_motors_speed19:
 	@ verifica se a velocidade do motor 2 eh valida
 	cmp r1, #63
 	movhi r0, #-2
-	bhi vc_end
+	bhi svc_end
 
 	ldr r2, =GPIO_BASE		@ carrega valor de DR
 	ldr r3, [r2, #GPIO_DR]
