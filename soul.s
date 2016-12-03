@@ -338,7 +338,21 @@ svc_set_alarm22:
 svc_end:
 	ldmfd sp!, {r1-r12, pc}
 
+IRQ_HANDLER:
+    ldr r1, =GPT_BASE
 
+    mov r0, #0x1
+    str r0, [r1, #GPT_SR]
+
+    @ incrementa CONTADOR
+    ldr r2, =CONTADOR
+    ldr r0, [r2]
+    add r0, #1
+    str r0, [r2]
+    sub lr, #4
+
+    movs pc, lr
+    
 
 @@@@@@ DATA @@@@@@
 
