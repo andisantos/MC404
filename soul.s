@@ -28,7 +28,7 @@ interrupt_vector:
 
 
 RESET_HANDLER:
-    
+
 	@Set interrupt table base address on coprocessor 15.
 	ldr r0, =interrupt_vector
 	mcr p15, 0, r0, c12, c0, 0
@@ -77,7 +77,7 @@ SET_GPT:
 
 	@habilitando o GPT e configurando clock_src
 	ldr r1, =GPT_BASE
-	
+
 	mov r0, #0x41
 	str r0, [r1, #GPT_CR]
 
@@ -103,7 +103,7 @@ SET_GPIO:
 
 	ldr r1, =GPIO_BASE
 
-	@inicializa o registrador de direcoes 
+	@inicializa o registrador de direcoes
 	ldr r0, =GDIR_INIT
 	str r0, [r1, #GPIO_GDIR]
 
@@ -118,7 +118,7 @@ SET_TZIC:
     @ Constantes para os enderecos do TZIC
 	.set TZIC_BASE,             0x0FFFC000
 	.set TZIC_INTCTRL,          0x0
-	.set TZIC_INTSEC1,          0x84 
+	.set TZIC_INTSEC1,          0x84
 	.set TZIC_ENSET1,           0x104
 	.set TZIC_PRIOMASK,         0xC
 	.set TZIC_PRIORITY9,        0x424
@@ -220,26 +220,27 @@ svc_register_proximity_callback17:
 svc_set_motor_speed18:
 	msr cpsr_c, #SYS_MODE       	@ muda para system
 
-	ldmfd sp!, {r0,r1}
-	
+	ldmfd sp!, {r1}
+    ldmfd sp!, {r0}
+
 	msr cpsr_c, #SUPERVISOR_MODE      	@ muda para supervisor
-   
+
    	cmp r1, #63			@ confere se velocidade é menor que 63
 	movhi r0, #-2			@ se não retorna -2
 	bhi svc_end
 
 	ldr r2, =GPIO_BASE		@ carrega valor de DR
 	ldr r3, [r2, #GPIO_DR]
-        
+
 	cmp r0, #0			@ se r0 for 0, seta a velocidade no motor0
 	beq set_motor0
 
 	cmp r0, #1			@ se r0 for 1, seta a velocidade no motor1
 	beq set_motor1
-	
+
 	mov r0, #-1			@ se o identificador do motor for invalido, retorna -1
 	b svc_end
-	
+
 set_motor0:
 	lsl r1, #19			@ coloca o valor da velocidade nos bits 19-24
 	bic r3, r3, #0xFE0000		@ zera os bits 18-24 de DR
@@ -247,13 +248,13 @@ set_motor0:
 	str r3, [r2, #GPIO_DR]		@ guarda o valor em DR
 	mov r0, #0
 	b svc_end
-    
+
 set_motor1:
 	lsl r1, #26			@ coloca o valor da velocidade nos bits 26-31
 	bic r3, r3, #0x7F000000		@ zera os bits 25-31 de DR
 	add r3, r3, r1			@ seta a velocidade em r3
 	str r3, [r2, #GPIO_DR]		@ guarda o valor em DR
-	mov r0, #0	
+	mov r0, #0
 	b svc_end
 
 
@@ -266,7 +267,7 @@ set_motor1:
 @	     0 caso Ok
 svc_set_motors_speed19:
 	msr cpsr_c, #SYS_MODE       @ muda para system
-	ldmfd sp!, {r0,r1}
+	ldmfd sp!, {r0, r1}
 
 	msr cpsr_c, #SUPERVISOR_MODE       @ muda para supervisor
 
@@ -286,7 +287,7 @@ svc_set_motors_speed19:
 	lsl r0, #19			@ coloca o valor da velocidade nos bits 19-24
 	lsl r1, #26			@ coloca o valor da velocidade nos bits 26-31
 	add r0, r0, r1
-	
+
 	ldr r4, =mask_vels
    	ldr r4, [r4]
 
@@ -296,7 +297,7 @@ svc_set_motors_speed19:
 
 	str r3, [r2, #GPIO_DR]		@ guarda o valor em DR
 	mov r0, #0					@ coloca 0 na flag
-	
+
 	b svc_end
 
 
@@ -307,13 +308,13 @@ svc_get_time20:
 	@ muda para system
     msr cpsr_c, #SYS_MODE
     ldmfd sp!, {r0}
-	
+
 	@ muda para supervisor
 	msr cpsr_c, #SUPERVISOR_MODE
-	
+
 	ldr r1, =SYS_TIME	@ carrega end do tempo do sistema
 	ldr r0, [r1]		@ carrega em r0 o tempo do sistema
-	
+
 	b svc_end
 
 
@@ -324,7 +325,7 @@ svc_set_time21:
 	@ muda para system
 	msr cpsr_c, #SYS_MODE
 	ldmfd sp!, {r0}
-	
+
 	@ muda para supervisor
 	msr cpsr_c, #SUPERVISOR_MODE
 
@@ -361,11 +362,11 @@ IRQ_HANDLER:
     sub lr, #4
 
     movs pc, lr
-    
+
 
 @@@@@@ DATA @@@@@@
 
-.data 
+.data
 
 CONTADOR:
 
@@ -389,9 +390,9 @@ ALARMS_COUNTER:			.word 0x0
 PILHA_USUARIO:
 
 .skip 600
-@ pilha do Supervisor 
+@ pilha do Supervisor
 PILHA_SUPERVISOR:
 
 .skip 600
-@ pilha do irq 
+@ pilha do irq
 PILHA_IRQ:
