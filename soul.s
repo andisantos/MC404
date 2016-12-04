@@ -170,28 +170,31 @@ SVC_HANDLER:
 	stmfd sp!, {r1-r12,lr}		@ salva os registradores do usuário na pilha do supervisor
 
 	cmp r7, #16
-	bleq svc_read_sonar16
+	beq svc_read_sonar16
 	cmp r7, #17
-	bleq svc_register_proximity_callback17
+	beq svc_register_proximity_callback17
 	cmp r7,	#18
-	bleq svc_set_motor_speed18
+	beq svc_set_motor_speed18
 	cmp r7, #19
-	bleq svc_set_motors_speed19
+	beq svc_set_motors_speed19
 	cmp r7, #20
-	bleq svc_get_time20
+	beq svc_get_time20
 	cmp r7, #21
-	bleq svc_set_time21
+	beq svc_set_time21
 	cmp r7, #22
-	bleq svc_set_alarm22
-	b svc_end
+	beq svc_set_alarm22
+	
+svc_end:
+	ldmfd sp!, {r1-r12, lr}
+    	movs pc, lr
 	
 @@@@@ READ_SONAR @@@@@@
 @ in: r0 = indentificador do sonar (0 a 15)
 @ out: r0 = valor obtido pelos sonares
 @	    -1 caso o identificador do sonar for invalido
 svc_read_sonar16:
-	msr cpsr_c, #SYS_MODE      		@ muda para system
-	ldmfd sp!, {r0}
+    msr cpsr_c, #SYS_MODE      		@ muda para system
+	ldmfd sp, {r0}
 	msr cpsr_c, #SUPERVISOR_MODE   		@ muda para supervisor
 
 	cmp r0, #15				@verifica se eh um sonar valido
@@ -202,66 +205,57 @@ svc_read_sonar16:
 	ldr r2, [r1, #GPIO_DR]
 
 
-	bic r2, r2, #0x3E			@zera os bits de SONAR_MUX E TRIGGER
-	orr r2, r2, r0, lsl #2			@coloca o valor do sonar que deve ser lido
-	str r2, [r1, #GPIO_DR]			@salva o sonar em DR
+	bic r2, r2, #0x3E			    @ zera os bits de SONAR_MUX E TRIGGER
+	orr r2, r2, r0, lsl #2			@ coloca o valor do sonar que deve ser lido
+	str r2, [r1, #GPIO_DR]			@ salva o sonar em DR
 
 	@delay 15ms
-	stmfd sp!, {r0-r3,lr}
-	mov r0, #15
-	bl delay
+	ldr r3, =9999
+	delay_1:
+        sub r3, r3, #1
+        cmp r3, #0
+        bgt delay_1
 
 	add r2, r2, #0x2 			@TRIGGER = 1
 	str r2, [r1, #GPIO_DR]
 
+    ldr r3, [r1, #GPIO_DR]
+
 	@delay 15ms
-	stmfd sp!, {r0-r3,lr}
-	mov r0, #15
-	bl delay
+	ldr r3, =9999
+	delay_2:
+        sub r3, r3, #1
+        cmp r3, #0
+        bgt delay_2
 
 	bic r2, r2, #0x2 			@TRIGGER = 0
+    str r2, [r1, #GPIO_DR]
 
 verifica_flag:
     ldr r0, [r1, #GPIO_DR]
     mov r2, r0 					@isola o bit referente a flag
-    and r2, r2, #1					
+    and r2, r2, #1
 
-    cmp r2, #1					@verifica se FLAG = 1				
+    cmp r2, #1					@verifica se FLAG = 1
     beq flag_ok
 
     @delay 10 ms
-    stmfd sp!, {r0-r3}				@se não for, faz delay 10 ms
-    mov r0, #10
-    bl delay
+    ldr r3, =6666				@se não for, faz delay 10 ms
+    delay_3:
+        sub r3, r3, #1
+        cmp r3, #0
+        bgt delay_3
+
     b verifica_flag
 
 flag_ok:
-	mov r0, r0, lsr #6			@coloca o valor do sonar nos bits 
-	mov r1, 0xFFF 				@menos significativos de r0
-    and r0, r0, r1 				@r0 = distancia lida no sonar		
+	mov r0, r0, lsr #6			@ coloca o valor do sonar nos bits menos significativos de r0
+	ldr r1, =mask_sonar
+    ldr r1, [r1]
+    and r0, r0, r1 				@ r0 = distancia lida no sonar
 
     b svc_end
-
-@@@@@@ funcao de delay
-@r0 = tempo de delay (10ms ou 15ms)
-delay:
-	mov r1, #0				@contador
-	
-	@delay 15ms
-	cmp r0, #15
-	moveq r2, #9999
-
-	@delay 10ms
-	cmp r0, #10
-	moveq r2, #6666
-
-	b loop
-loop:
-	add r1, r1, #1
-	cmp r1, r2
-	bls loop
-
-	ldmfd sp!, {r0-r3, pc}
+    
 
 @@@@@@ REGISTER PROXIMITY @@@@@@
 @ in: r0 = identificador do sonar (0 a 15)
@@ -404,10 +398,6 @@ svc_set_time21:
 @            0 caso contrario
 svc_set_alarm22:
 
-
-svc_end:
-	ldmfd sp!, {r1-r12, lr}
-    	movs pc, lr
 
 IRQ_HANDLER:
 
