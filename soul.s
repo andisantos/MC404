@@ -5,7 +5,7 @@
 .set IRQ_MODE,          	 0x12
 .set SUPERVISOR_MODE,    	 0x13
 .set SYS_MODE,            	 0x3F
-.set USER_TEXT,				 0x77802000
+.set USER_TEXT,			 0x77802000
 .org 0x0
 .section .iv,"a"
 
@@ -67,7 +67,7 @@ SET_GPT:
 	.set GPT_BASE,				0x53FA0000
 	.set GPT_CR,				0x0
 	.set GPT_PR,				0x4
-	.set GPT_SR,                0x8
+	.set GPT_SR,                		0x8
 	.set GPT_OCR1,				0x10
 	.set GPT_IR,				0xC
 
@@ -109,7 +109,7 @@ SET_GPIO:
 
 
 	msr cpsr_c, #USER_MODE
-	ldr r1, =USER_TEXT			@muda para o modo usuario
+	ldr r1, =USER_TEXT				@muda para o modo usuario
 	mov pc, r1					@pula para o codigo do usuario
 
 @@@@@@ TZIC @@@@@@
@@ -192,9 +192,9 @@ SVC_HANDLER:
 svc_read_sonar16:
 	msr cpsr_c, #SYS_MODE      		@ muda para system
 	ldmfd sp!, {r0}
-	msr cpsr_c, #SUPERVISOR_MODE   	@ muda para supervisor
+	msr cpsr_c, #SUPERVISOR_MODE   		@ muda para supervisor
 
-	cmp r0, #15			@verifica se eh um sonar valido
+	cmp r0, #15				@verifica se eh um sonar valido
 	movhi r0, #-1
 	bhi svc_end
 
@@ -203,8 +203,8 @@ svc_read_sonar16:
 
 
 	bic r2, r2, #0x3E			@zera os bits de SONAR_MUX E TRIGGER
-	orr r2, r2, r0, lsl #2		@coloca o valor do sonar que deve ser lido
-	str r2, [r1, #GPIO_DR]		@salva o sonar em DR
+	orr r2, r2, r0, lsl #2			@coloca o valor do sonar que deve ser lido
+	str r2, [r1, #GPIO_DR]			@salva o sonar em DR
 
 	@delay 15ms
 	stmfd sp!, {r0-r3,lr}
@@ -230,7 +230,7 @@ verifica_flag:
     beq flag_ok
 
     @delay 10 ms
-    stmfd sp!, {r0-r3}			@se não for, faz delay 10 ms
+    stmfd sp!, {r0-r3}				@se não for, faz delay 10 ms
     mov r0, #10
     bl delay
     b verifica_flag
@@ -280,42 +280,41 @@ svc_register_proximity_callback17:
 @	    -2 caso a velocidade seja invalida
 @	     0 caso ok
 svc_set_motor_speed18:
-	msr cpsr_c, #SYS_MODE       	@ muda para system
+	msr cpsr_c, #SYS_MODE		       	@ muda para system
 
-	ldmfd sp!, {r1}
-    ldmfd sp!, {r0}
+	ldmfd sp!, {r0, r1}
 
 	msr cpsr_c, #SUPERVISOR_MODE      	@ muda para supervisor
 
-   	cmp r1, #63			@ confere se velocidade é menor que 63
-	movhi r0, #-2			@ se não retorna -2
+   	cmp r1, #63				@ confere se velocidade é menor que 63
+	movhi r0, #-2				@ se não retorna -2
 	bhi svc_end
 
-	ldr r2, =GPIO_BASE		@ carrega valor de DR
+	ldr r2, =GPIO_BASE			@ carrega valor de DR
 	ldr r3, [r2, #GPIO_DR]
 
-	cmp r0, #0			@ se r0 for 0, seta a velocidade no motor0
+	cmp r0, #0				@ se r0 for 0, seta a velocidade no motor0
 	beq set_motor0
 
-	cmp r0, #1			@ se r0 for 1, seta a velocidade no motor1
+	cmp r0, #1				@ se r0 for 1, seta a velocidade no motor1
 	beq set_motor1
 
-	mov r0, #-1			@ se o identificador do motor for invalido, retorna -1
+	mov r0, #-1				@ se o identificador do motor for invalido, retorna -1
 	b svc_end
 
 set_motor0:
-	lsl r1, #19			@ coloca o valor da velocidade nos bits 19-24
-	bic r3, r3, #0xFE0000		@ zera os bits 18-24 de DR
-	add r3, r3, r1			@ seta a velocidade em r3
-	str r3, [r2, #GPIO_DR]		@ guarda o valor em DR
+	lsl r1, #19				@ coloca o valor da velocidade nos bits 19-24
+	bic r3, r3, #0x1FC0000			@ zera os bits 18-24 de DR
+	orr r3, r3, r1				@ seta a velocidade em r3
+	str r3, [r2, #GPIO_DR]			@ guarda o valor em DR
 	mov r0, #0
 	b svc_end
 
 set_motor1:
-	lsl r1, #26			@ coloca o valor da velocidade nos bits 26-31
-	bic r3, r3, #0x7F000000		@ zera os bits 25-31 de DR
-	add r3, r3, r1			@ seta a velocidade em r3
-	str r3, [r2, #GPIO_DR]		@ guarda o valor em DR
+	lsl r1, #26				@ coloca o valor da velocidade nos bits 26-31
+	bic r3, r3, #0xFE000000			@ zera os bits 25-31 de DR
+	orr r3, r3, r1				@ seta a velocidade em r3
+	str r3, [r2, #GPIO_DR]			@ guarda o valor em DR
 	mov r0, #0
 	b svc_end
 
@@ -328,10 +327,10 @@ set_motor1:
 @	    -2 caso a velocidade do motor 1 seja invalida
 @	     0 caso Ok
 svc_set_motors_speed19:
-	msr cpsr_c, #SYS_MODE       @ muda para system
+	msr cpsr_c, #SYS_MODE			@ muda para system
 	ldmfd sp!, {r0, r1}
 
-	msr cpsr_c, #SUPERVISOR_MODE       @ muda para supervisor
+	msr cpsr_c, #SUPERVISOR_MODE       	@ muda para supervisor
 
 	@ verifica se a velocidade do motor 1 eh valida
 	cmp r0, #63
@@ -343,11 +342,11 @@ svc_set_motors_speed19:
 	movhi r0, #-2
 	bhi svc_end
 
-	ldr r2, =GPIO_BASE		@ carrega valor de DR
+	ldr r2, =GPIO_BASE			@ carrega valor de DR
 	ldr r3, [r2, #GPIO_DR]
 
-	lsl r0, #19			@ coloca o valor da velocidade nos bits 19-24
-	lsl r1, #26			@ coloca o valor da velocidade nos bits 26-31
+	lsl r0, #19				@ coloca o valor da velocidade nos bits 19-24
+	lsl r1, #26				@ coloca o valor da velocidade nos bits 26-31
 	add r0, r0, r1
 
 	ldr r4, =mask_vels
@@ -357,8 +356,8 @@ svc_set_motors_speed19:
 	bic r3, r3, r4
 	add r3, r3, r0
 
-	str r3, [r2, #GPIO_DR]		@ guarda o valor em DR
-	mov r0, #0					@ coloca 0 na flag
+	str r3, [r2, #GPIO_DR]			@ guarda o valor em DR
+	mov r0, #0				@ coloca 0 na flag
 
 	b svc_end
 
@@ -433,13 +432,13 @@ IRQ_HANDLER:
 CONTADOR:
 
 @ mascara para dr
-mask_vels:              .word 0x7FFE0000
+mask_vels:              	.word 0x7FFE0000
 
 @Numero de call backs
 @ se der bosta, tirar os .words bjs
 
 @Tempo do sistema
-SYS_TIME: 				.word 0x0
+SYS_TIME: 			.word 0x0
 
 @Contador de call backs
 CALLBACK_COUNTER:		.word 0x0
