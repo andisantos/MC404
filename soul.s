@@ -406,7 +406,8 @@ svc_set_alarm22:
 
 
 svc_end:
-	ldmfd sp!, {r1-r12, pc}
+	ldmfd sp!, {r1-r12, lr}
+    	movs pc, lr
 
 IRQ_HANDLER:
 
