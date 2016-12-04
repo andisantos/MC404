@@ -265,7 +265,27 @@ flag_ok:
 @	   		-2 caso o identificador do sonar seja invalido
 @	     	0 caso contrario
 svc_register_proximity_callback17:
+	msr cpsr_c, #SYS_MODE
+	ldmfd sp!, {r0-r2}
+	msr cpsr_c, #SUPERVISOR_MODE
 
+	@verifica se o sonar eh valido
+	cmp r0, #15
+	movhi r0, #-2
+	bhi svc_end
+
+	@verifica se o numero de callbacks maximo for maior que o MAX_CALLBACKS
+	ldr r3, =CALLBACK_COUNTER
+	ldr r4, [r3]
+	cmp r3, #MAX_CALLBACKS
+	movhi r0, #-1
+	bhi svc_end
+
+	@se nao tiver erro
+	add r4, r4, #1				@incrementa o contador de callbacks
+	str r4, [r3]				@salva no contador
+	
+	@nao como fazer daqui, acho que precisa de vetores
 
 @@@@@ MOTOR SPEED @@@@@@
 @ in: r0 = identificador do motor (0 ou 1)
