@@ -398,7 +398,7 @@ svc_set_time21:
 
 
 @@@@@@ SET_ALARM @@@@@@
-@ in: r0 = ponteiro pra funcaom a ser chamada
+@ in: r0 = ponteiro pra funcao a ser chamada
 @     r1 = tempo do sistema
 @ out: r0 = -1 se numero maximo de alarmes for maior que MAX_ALARMS
 @	    -2 se tempo for menor que o tempo do atual do sistema
