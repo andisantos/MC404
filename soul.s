@@ -286,6 +286,7 @@ svc_register_proximity_callback17:
 	str r4, [r3]				@salva no contador
 	
 	@nao como fazer daqui, acho que precisa de vetores
+	
 
 @@@@@ MOTOR SPEED @@@@@@
 @ in: r0 = identificador do motor (0 ou 1)
@@ -417,6 +418,44 @@ svc_set_time21:
 @	    -2 se tempo for menor que o tempo do atual do sistema
 @            0 caso contrario
 svc_set_alarm22:
+    @ muda para system
+    msr cpsr_c, #SYS_MODE
+    ldmfd sp, {r0, r1}
+
+    @ muda para supervisor
+	msr cpsr_c, #SUPERVISOR_MODE
+
+    @ checa se o numero de alarmes ligados for maior que MAX_ALARMS
+    cmp #ALARMS_COUNTER, #MAX_ALARMS
+    moveq r0, #-1
+    beq svc_end
+
+    @ checa se o tempo eh menor que o tempo atual
+    cmp r1, #SYS_TIME
+    movlo r0, #-2
+    blo svc_end
+
+    @ carrega o próximo espaço no vetor de tempos dos alarmes
+    ldr r2, =ALARM_TIME             
+    mov r3, #4
+    mul r3, r3, #ALARMS_COUNTER
+    add r2, r2, r3
+
+    @ salva o tempo do alarme
+    str r1, [r2]        
+
+    @ carrega o próximo espaço no vetor de funcoes dos alarmes
+    ldr r2, =ALARM_FUNC
+    mov r3, #4
+    mul r3, r3, #ALARMS_COUNTER
+    add r2, r2, r3
+
+    @ salva a funcao do alarme 
+    str r0, [r2]
+
+    mov r0, #0    
+
+    b svc_end
 
 
 IRQ_HANDLER:
