@@ -292,7 +292,7 @@ flag_ok:
 @	     0 caso contrario
 svc_register_proximity_callback17:
 	msr cpsr_c, #SYS_MODE
-	ldmfd sp!, {r0-r2}
+	ldmfd sp, {r0-r2}
 	msr cpsr_c, #SUPERVISOR_MODE
 
 	@verifica se o sonar eh valido
@@ -341,7 +341,7 @@ svc_register_proximity_callback17:
 svc_set_motor_speed18:
 	msr cpsr_c, #SYS_MODE		       	@ muda para system
 
-	ldmfd sp!, {r0, r1}
+	ldmfd sp, {r0, r1}
 
 	msr cpsr_c, #SUPERVISOR_MODE      	@ muda para supervisor
 
@@ -387,7 +387,7 @@ set_motor1:
 @	     0 caso Ok
 svc_set_motors_speed19:
 	msr cpsr_c, #SYS_MODE			@ muda para system
-	ldmfd sp!, {r0, r1}
+	ldmfd sp, {r0, r1}
 
 	msr cpsr_c, #SUPERVISOR_MODE       	@ muda para supervisor
 
@@ -427,7 +427,7 @@ svc_set_motors_speed19:
 svc_get_time20:
 	@ muda para system
    	msr cpsr_c, #SYS_MODE
-   	ldmfd sp!, {r0}
+   	ldmfd sp, {r0}
 
 	@ muda para supervisor
 	msr cpsr_c, #SUPERVISOR_MODE
@@ -444,7 +444,7 @@ svc_get_time20:
 svc_set_time21:
 	@ muda para system
 	msr cpsr_c, #SYS_MODE
-	ldmfd sp!, {r0}
+	ldmfd sp, {r0}
 
 	@ muda para supervisor
 	msr cpsr_c, #SUPERVISOR_MODE
