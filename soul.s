@@ -205,10 +205,10 @@ SVC_HANDLER:
 	beq svc_set_time21
 	cmp r7, #22
 	beq svc_set_alarm22
-    cmp r7, #63
-    beq svc_change_mode63
-    cmp r7, #64
-    beq svc_change_mode64
+	cmp r7, #63
+	beq svc_change_mode63
+	cmp r7, #64
+	beq svc_change_mode64
 
 svc_end:
 	ldmfd sp!, {r1-r12, lr}
@@ -481,20 +481,21 @@ svc_set_alarm22:
 
 	@ carrega o próximo espaço vazio no vetor de tempos dos alarmes
 	ldr r2, =ALARM_TIME
+	ldr r4, [r2]
 	mov r3, #0
-
+	
 	loop_vet_alarm:
-		cmp [r2], #0
+		cmp r4, #0
 		addhi r2, r2, #4
 		addhi r3, r3, #1
 		bhi loop_vet_alarm
 
 	@ salva o tempo do alarme
 	str r1, [r2]
-
+	mov r5, #4
 	@ carrega o próximo espaço vazio no vetor de funcoes dos alarmes
 	ldr r2, =ALARM_FUNC
-	mul r3, r3, #4
+	mul r3, r3, r5
 	add r2, r2, r3
 
 	str r0, [r2]			@ salva a funcao do alarme
@@ -558,8 +559,8 @@ check_alarms:
 	str r6, [r0]
 	sub r4, r4, #1          @ subtrai numero de alarmes
 	str r4, [r3]
-
-	mul r5, r5, #4          @ define posicao do vetor ALARM_FUNC
+	mov r7, #4
+	mul r5, r5, r7          @ define posicao do vetor ALARM_FUNC
 	ldr r7, [r1, r5]        @ carrega endereco da funcao a ser chamada
 
 	@ salva o estado atual e chama a funcao
@@ -622,9 +623,10 @@ check_callback:
 	str r2, [r1]
 	add sp, sp, #4
 	ldmfd sp!, {r1-r11, lr}
-
+	
+	mov r7, #4
 	@ valor lido em r0
-	mul r3, r3, #4
+	mul r3, r3, #r7
 	ldr r6, [r1, r3]        @ le o limiar do vetor CALLBACK_THRESHOLD
 	cmp r0, r6              @ se a distancia for maior que o limiar
 	bhi irq_end             @ encerra
@@ -668,34 +670,34 @@ irq_end:
 
 CONTADOR:
 
-@ mascara para dr
+@ Mascara para dr
 mask_vels:              	.word 0x7FFE0000
 
-@Numero de call backs
-@ se der bosta, tirar os .words bjs
+@ Mascara para sonar
+mask_sonar:			.word 0xFFF
 
-@Tempo do sistema
+@ Tempo do sistema
 SYS_TIME: 			.word 0x0
 
-@Controla se um callback esta ativo ou nao
-CALLBACK_ATIVO:         .word 0x0
+@ Controla se um callback esta ativo ou nao
+CALLBACK_ATIVO:         	.word 0x0
 
-@Contador de call backs
+@ Contador de call backs
 CALLBACK_COUNTER:		.word 0x0
 
-@Vetor de ID dos sonares passados pra funcao de callback
+@ Vetor de ID dos sonares passados pra funcao de callback
 CALLBACK_ID_SONAR:		.fill MAX_CALLBACKS, 0x4, 0x16
 
-@vetor de funcoes da callback
+@ Vetor de funcoes da callback
 CALLBACK_FUNC:			.fill MAX_CALLBACKS, 0x4, 0x0
 
-@Vetor dos limiares da callback
+@ Vetor dos limiares da callback
 CALLBACK_THRESHOLD:		.fill MAX_CALLBACKS, 0x4, 0x0
 
-@Contador de alarmes
+@ Contador de alarmes
 ALARMS_COUNTER:			.word 0x0
 
-@Vetor de tempo dos alarmes
+@ Vetor de tempo dos alarmes
 ALARM_TIME:                 	.word 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0
 
 @ Vetor de funcoes dos alarmes
