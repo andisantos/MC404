@@ -1,3 +1,4 @@
+
 .align 4
 
 @ Modos de Execução
@@ -48,12 +49,23 @@ RESET_HANDLER:
 	@ Zera os vetores de alarme e callbacks
 	ldr r1, =ALARM_TIME
 	mov r2, #0
-	loop:
+	loop_alarm:
 		str r0, [r1]
 		add r1, r1, #4
 		add r2, r2, #1
 		cmp r2, #MAX_ALARMS
-		blt loop
+		blt loop_alarm
+
+
+    ldr r1, =CALLBACK_THRESHOLD
+    mov r2, #0
+    loop_call:
+        str r0, [r1]
+        add r1, r1, #4
+        add r2, r2, #1
+        cmp r2, #MAX_CALLBACKS
+        blt loop_call
+
 
 @@@@@@ INICIALIZA PILHAS @@@@@@
 
@@ -192,11 +204,11 @@ SVC_HANDLER:
 	beq svc_set_time21
 	cmp r7, #22
 	beq svc_set_alarm22
-	
+
 svc_end:
 	ldmfd sp!, {r1-r12, lr}
     	movs pc, lr
-	
+
 @@@@@ READ_SONAR @@@@@@
 @ in: r0 = indentificador do sonar (0 a 15)
 @ out: r0 = valor obtido pelos sonares
@@ -264,7 +276,7 @@ flag_ok:
 	and r0, r0, r1 				@ r0 = distancia lida no sonar
 
 	b svc_end
-    
+
 
 @@@@@@ REGISTER PROXIMITY @@@@@@
 @ in: r0 = identificador do sonar (0 a 15)
@@ -299,12 +311,12 @@ svc_register_proximity_callback17:
 	ldr r7, =CALLBACK_FUNC			@endereco do vetor de funcoes
 
 	@loop para encontrar uma posicao livre nos vetores
-	loop:
-		mov r3, #0					
-		ldr r4, [r6, r3]		@carrega em r4 o valor na posicao do vetor 
+	loop_vet_call:
+		mov r3, #0
+		ldr r4, [r6, r3]		@carrega em r4 o valor na posicao do vetor
 		cmp r3, r4			@se r4 != 0, checa a proxima posicao
 		addne r3, r3, #4
-		bne loop
+		bne loop_vet_call
 
 
 	str r0, [r5, r3]       			@ Salva o ID do sonar no vetor
@@ -313,7 +325,7 @@ svc_register_proximity_callback17:
 	mov r0, #0              		@Colocar zero na flag, informando que deu certo
 
 	b svc_end
-	
+
 
 @@@@@ MOTOR SPEED @@@@@@
 @ in: r0 = identificador do motor (0 ou 1)
@@ -464,11 +476,11 @@ svc_set_alarm22:
 	ldr r2, =ALARM_TIME
 	mov r3, #0
 
-	loop:
+	loop_vet_alarm:
 		cmp [r2], #0
 		addhi r2, r2, #4
 		addhi r3, r3, #1
-		bhi loop
+		bhi loop_vet_alarm
 
 	@ salva o tempo do alarme
 	str r1, [r2]
@@ -483,7 +495,7 @@ svc_set_alarm22:
 	ldr r1, =ALARMS_COUNTER		@ atualiza o contador de alarmes
 	ldr r1, [r1]
 	add r1, r1, #1
-	
+
 	mov r0, #0
 
 	b svc_end
