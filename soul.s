@@ -466,9 +466,11 @@ svc_set_alarm22:
 	ldmfd sp, {r0, r1}
 
 	msr cpsr_c, #SUPERVISOR_MODE		@ muda para supervisor
-
+	ldr r2, =ALARMS_COUNTER
+	ldr r2, [ŕ2]
+	
 	@ checa se o numero de alarmes ligados for maior que MAX_ALARMS
-	cmp #ALARMS_COUNTER, #MAX_ALARMS
+	cmp r2, #MAX_ALARMS
 	moveq r0, #-1
 	beq svc_end
 
