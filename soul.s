@@ -164,7 +164,7 @@ SET_TZIC:
 @ trocar o modo para SUPERVISOR
 
 SVC_HANDLER:
-	.set MAX_ALARMX, 		8
+	.set MAX_ALARMS, 		8
 	.set MAX_CALLBACKS,		8
 
 	stmfd sp!, {r1-r12,lr}		@ salva os registradores do usuário na pilha do supervisor
