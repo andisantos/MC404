@@ -262,8 +262,8 @@ flag_ok:
 @     r1 = limiar de distancia
 @     r2 = ponteiro para a funcao a ser chamada caso tenha alarme
 @ out: r0 = -1 caso o num de callbacks máximo ativo no sistema seja maior do que MAX_CALLBACKS
-@	   		-2 caso o identificador do sonar seja invalido
-@	     	0 caso contrario
+@	    -2 caso o identificador do sonar seja invalido
+@	     0 caso contrario
 svc_register_proximity_callback17:
 	msr cpsr_c, #SYS_MODE
 	ldmfd sp!, {r0-r2}
@@ -276,7 +276,7 @@ svc_register_proximity_callback17:
 
 	@verifica se o numero de callbacks maximo for maior que o MAX_CALLBACKS
 	ldr r3, =CALLBACK_COUNTER
-	ldr r4, [r3]
+	ldr r3, [r3]
 	cmp r3, #MAX_CALLBACKS
 	movhi r0, #-1
 	bhi svc_end
@@ -436,47 +436,48 @@ svc_set_time21:
 @	    -2 se tempo for menor que o tempo do atual do sistema
 @            0 caso contrario
 svc_set_alarm22:
-        @ muda para system
-    msr cpsr_c, #SYS_MODE
-    ldmfd sp, {r0, r1}
+	msr cpsr_c, #SYS_MODE			@ muda para system
+	ldmfd sp, {r0, r1}
 
-    @ muda para supervisor
-	msr cpsr_c, #SUPERVISOR_MODE
+	msr cpsr_c, #SUPERVISOR_MODE		@ muda para supervisor
 
-    @ checa se o numero de alarmes ligados for maior que MAX_ALARMS
-    cmp #ALARMS_COUNTER, #MAX_ALARMS
-    moveq r0, #-1
-    beq svc_end
+	@ checa se o numero de alarmes ligados for maior que MAX_ALARMS
+	cmp #ALARMS_COUNTER, #MAX_ALARMS
+	moveq r0, #-1
+	beq svc_end
 
-    @ checa se o tempo eh menor que o tempo atual
-    cmp r1, #SYS_TIME
-    movlo r0, #-2
-    blo svc_end
+	@ checa se o tempo eh menor que o tempo atual
+	cmp r1, #SYS_TIME
+	movlo r0, #-2
+	blo svc_end
 
-    @ carrega o próximo espaço vazio no vetor de tempos dos alarmes
-    ldr r2, =ALARM_TIME
-    mov r3, #0
+	@ carrega o próximo espaço vazio no vetor de tempos dos alarmes
+	ldr r2, =ALARM_TIME
+	mov r3, #0
 
-loop:
-    cmp [r2], #0
-    addhi r2, r2, #4
-    addhi r3, r3, #1
-    bhi loop
+	loop:
+		cmp [r2], #0
+		addhi r2, r2, #4
+		addhi r3, r3, #1
+		bhi loop
 
-    @ salva o tempo do alarme
-    str r1, [r2]
+	@ salva o tempo do alarme
+	str r1, [r2]
 
-    @ carrega o próximo espaço no vetor de funcoes dos alarmes
-    ldr r2, =ALARM_FUNC
-    mul r3, r3, #4
-    add r2, r2, r3
+	@ carrega o próximo espaço vazio no vetor de funcoes dos alarmes
+	ldr r2, =ALARM_FUNC
+	mul r3, r3, #4
+	add r2, r2, r3
 
-    @ salva a funcao do alarme
-    str r0, [r2]
+	str r0, [r2]			@ salva a funcao do alarme
 
-    mov r0, #0
+	ldr r1, =ALARMS_COUNTER		@ atualiza o contador de alarmes
+	ldr r1, [r1]
+	add r1, r1, #1
+	
+	mov r0, #0
 
-    b svc_end
+	b svc_end
 
 IRQ_HANDLER:
 
