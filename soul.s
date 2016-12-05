@@ -284,8 +284,26 @@ svc_register_proximity_callback17:
 	@se nao tiver erro
 	add r4, r4, #1				@incrementa o contador de callbacks
 	str r4, [r3]				@salva no contador
-	
-	@nao como fazer daqui, acho que precisa de vetores
+
+	ldr r5, =CALLBACK_ID_SONAR		@endereco do vetor de ids
+	ldr r6, =CALLBACK_THRESHOLD 		@endereco do vetor de limiares
+	ldr r7, =CALLBACK_FUNC			@endereco do vetor de funcoes
+
+	@loop para encontrar uma posicao livre nos vetores
+	loop:
+		mov r3, #0					
+		ldr r4, [r6, r3]		@carrega em r4 o valor na posicao do vetor 
+		cmp r3, r4			@se r4 != 0, checa a proxima posicao
+		addne r3, r3, #4
+		bne loop
+
+
+	str r0, [r5, r3]       			@ Salva o ID do sonar no vetor
+	str r1, [r6, r3]        		@ Salva o limiar no vetor
+	str r2, [r7, r3]        		@ Salva a funcao no vetor
+	mov r0, #0              		@Colocar zero na flag, informando que deu certo
+
+	b svc_end
 	
 
 @@@@@ MOTOR SPEED @@@@@@
@@ -495,10 +513,19 @@ SYS_TIME: 			.word 0x0
 @Contador de call backs
 CALLBACK_COUNTER:		.word 0x0
 
+@Vetor de ID dos sonares passados pra funcao de callback
+CALLBACK_ID_SONAR:		.fill MAX_CALLBACKS, 0x4, 0x0
+
+@vetor de funcoes da callback
+CALLBACK_FUNC:			.fill MAX_CALLBACKS, 0x4, 0x0
+
+@Vetor dos limiares da callback
+CALLBACK_THRESHOLD:		.fill MAX_CALLBACKS, 0x4, 0x0
+
 @Contador de alarmes
 ALARMS_COUNTER:			.word 0x0
 
-@ Vetor de trmpo dos alarmes
+@Vetor de tempo dos alarmes
 ALARM_TIME:                 	.word 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0
 
 @ Vetor de funcoes dos alarmes
