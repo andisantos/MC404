@@ -418,7 +418,7 @@ svc_set_time21:
 @	    -2 se tempo for menor que o tempo do atual do sistema
 @            0 caso contrario
 svc_set_alarm22:
-    @ muda para system
+        @ muda para system
     msr cpsr_c, #SYS_MODE
     ldmfd sp, {r0, r1}
 
@@ -435,28 +435,30 @@ svc_set_alarm22:
     movlo r0, #-2
     blo svc_end
 
-    @ carrega o próximo espaço no vetor de tempos dos alarmes
-    ldr r2, =ALARM_TIME             
-    mov r3, #4
-    mul r3, r3, #ALARMS_COUNTER
-    add r2, r2, r3
+    @ carrega o próximo espaço vazio no vetor de tempos dos alarmes
+    ldr r2, =ALARM_TIME
+    mov r3, #0
+
+loop:
+    cmp [r2], #0
+    addhi r2, r2, #4
+    addhi r3, r3, #1
+    bhi loop
 
     @ salva o tempo do alarme
-    str r1, [r2]        
+    str r1, [r2]
 
     @ carrega o próximo espaço no vetor de funcoes dos alarmes
     ldr r2, =ALARM_FUNC
-    mov r3, #4
-    mul r3, r3, #ALARMS_COUNTER
+    mul r3, r3, #4
     add r2, r2, r3
 
-    @ salva a funcao do alarme 
+    @ salva a funcao do alarme
     str r0, [r2]
 
-    mov r0, #0    
+    mov r0, #0
 
     b svc_end
-
 
 IRQ_HANDLER:
 
