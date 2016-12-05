@@ -48,17 +48,17 @@ RESET_HANDLER:
 
 @@@@@@ INICIALIZA PILHAS @@@@@@
 
-    @ inicializa PILHA_USUARIO
-    msr cpsr_c, #SYS_MODE
-    ldr sp, =PILHA_USUARIO
+	@ inicializa PILHA_USUARIO
+	msr cpsr_c, #SYS_MODE
+	ldr sp, =PILHA_USUARIO
 
-    @ inicializa PILHA_IRQ
-    msr cpsr_c, #IRQ_MODE
-    ldr sp, =PILHA_IRQ
+	@ inicializa PILHA_IRQ
+	msr cpsr_c, #IRQ_MODE
+	ldr sp, =PILHA_IRQ
 
-    @ inicializa PILHA_SUPERVISOR
-    msr cpsr_c, #SUPERVISOR_MODE
-    ldr sp, =PILHA_SUPERVISOR
+	@ inicializa PILHA_SUPERVISOR
+	msr cpsr_c, #SUPERVISOR_MODE
+	ldr sp, =PILHA_SUPERVISOR
 
 
 @@@@@@ GPT @@@@@@
@@ -126,17 +126,17 @@ SET_TZIC:
 	@ Liga o controlador de interrupcoes
 	@ R1 <= TZIC_BASE
 
-	ldr	r1, =TZIC_BASE
+	ldr r1, =TZIC_BASE
 
 	@ Configura interrupcao 39 do GPT como nao segura
-	mov	r0, #(1 << 7)
-	str	r0, [r1, #TZIC_INTSEC1]
+	mov r0, #(1 << 7)
+	str r0, [r1, #TZIC_INTSEC1]
 
 	@ Habilita interrupcao 39 (GPT)
 	@ reg1 bit 7 (gpt)
 
-	mov	r0, #(1 << 7)
-	str	r0, [r1, #TZIC_ENSET1]
+	mov r0, #(1 << 7)
+	str r0, [r1, #TZIC_ENSET1]
 
 	@ Configure interrupt39 priority as 1
 	@ reg9, byte 3
@@ -212,14 +212,14 @@ svc_read_sonar16:
 	@delay 15ms
 	ldr r3, =9999
 	delay_1:
-        sub r3, r3, #1
-        cmp r3, #0
-        bgt delay_1
+		sub r3, r3, #1
+		cmp r3, #0
+		bgt delay_1
 
 	add r2, r2, #0x2 			@TRIGGER = 1
 	str r2, [r1, #GPIO_DR]
 
-    ldr r3, [r1, #GPIO_DR]
+	ldr r3, [r1, #GPIO_DR]
 
 	@delay 15ms
 	ldr r3, =9999
@@ -229,32 +229,32 @@ svc_read_sonar16:
         bgt delay_2
 
 	bic r2, r2, #0x2 			@TRIGGER = 0
-    str r2, [r1, #GPIO_DR]
+	str r2, [r1, #GPIO_DR]
 
 verifica_flag:
-    ldr r0, [r1, #GPIO_DR]
-    mov r2, r0 					@isola o bit referente a flag
-    and r2, r2, #1
+	ldr r0, [r1, #GPIO_DR]
+	mov r2, r0 					@isola o bit referente a flag
+	and r2, r2, #1
 
-    cmp r2, #1					@verifica se FLAG = 1
-    beq flag_ok
+	cmp r2, #1					@verifica se FLAG = 1
+	beq flag_ok
 
-    @delay 10 ms
-    ldr r3, =6666				@se não for, faz delay 10 ms
-    delay_3:
-        sub r3, r3, #1
-        cmp r3, #0
-        bgt delay_3
+	@delay 10 ms
+	ldr r3, =6666				@se não for, faz delay 10 ms
+	delay_3:
+		sub r3, r3, #1
+		cmp r3, #0
+		bgt delay_3
 
-    b verifica_flag
+	b verifica_flag
 
 flag_ok:
 	mov r0, r0, lsr #6			@ coloca o valor do sonar nos bits menos significativos de r0
 	ldr r1, =mask_sonar
-    ldr r1, [r1]
-    and r0, r0, r1 				@ r0 = distancia lida no sonar
+	ldr r1, [r1]
+	and r0, r0, r1 				@ r0 = distancia lida no sonar
 
-    b svc_end
+	b svc_end
     
 
 @@@@@@ REGISTER PROXIMITY @@@@@@
@@ -400,8 +400,8 @@ svc_set_motors_speed19:
 @ out: r0 = tempo do sistema
 svc_get_time20:
 	@ muda para system
-    msr cpsr_c, #SYS_MODE
-    ldmfd sp!, {r0}
+   	msr cpsr_c, #SYS_MODE
+   	ldmfd sp!, {r0}
 
 	@ muda para supervisor
 	msr cpsr_c, #SUPERVISOR_MODE
