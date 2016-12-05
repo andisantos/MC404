@@ -48,7 +48,7 @@ RESET_HANDLER:
 
 @@@@@@ INICIALIZA PILHAS @@@@@@
 
-   @ inicializa PILHA_USUARIO
+    @ inicializa PILHA_USUARIO
     msr cpsr_c, #SYS_MODE
     ldr sp, =PILHA_USUARIO
 
@@ -115,7 +115,7 @@ SET_GPIO:
 @@@@@@ TZIC @@@@@@
 SET_TZIC:
 
-    @ Constantes para os enderecos do TZIC
+    	@ Constantes para os enderecos do TZIC
 	.set TZIC_BASE,             0x0FFFC000
 	.set TZIC_INTCTRL,          0x0
 	.set TZIC_INTSEC1,          0x84
@@ -193,7 +193,7 @@ svc_end:
 @ out: r0 = valor obtido pelos sonares
 @	    -1 caso o identificador do sonar for invalido
 svc_read_sonar16:
-    msr cpsr_c, #SYS_MODE      		@ muda para system
+    	msr cpsr_c, #SYS_MODE      		@ muda para system
 	ldmfd sp, {r0}
 	msr cpsr_c, #SUPERVISOR_MODE   		@ muda para supervisor
 
@@ -205,7 +205,7 @@ svc_read_sonar16:
 	ldr r2, [r1, #GPIO_DR]
 
 
-	bic r2, r2, #0x3E			    @ zera os bits de SONAR_MUX E TRIGGER
+	bic r2, r2, #0x3E			@ zera os bits de SONAR_MUX E TRIGGER
 	orr r2, r2, r0, lsl #2			@ coloca o valor do sonar que deve ser lido
 	str r2, [r1, #GPIO_DR]			@ salva o sonar em DR
 
@@ -367,7 +367,7 @@ svc_set_motors_speed19:
 	ldr r4, =mask_vels
    	ldr r4, [r4]
 
-    @ zera os bits de r3 para colocar as velocidades
+    	@ zera os bits de r3 para colocar as velocidades
 	bic r3, r3, r4
 	add r3, r3, r0
 
@@ -388,8 +388,8 @@ svc_get_time20:
 	@ muda para supervisor
 	msr cpsr_c, #SUPERVISOR_MODE
 
-	ldr r1, =SYS_TIME	@ carrega end do tempo do sistema
-	ldr r0, [r1]		@ carrega em r0 o tempo do sistema
+	ldr r1, =SYS_TIME			@ carrega end do tempo do sistema
+	ldr r0, [r1]				@ carrega em r0 o tempo do sistema
 
 	b svc_end
 
@@ -405,8 +405,8 @@ svc_set_time21:
 	@ muda para supervisor
 	msr cpsr_c, #SUPERVISOR_MODE
 
-	ldr r1, =SYS_TIME	@ carrega end do tempo do sistema
-	str r0, [r1]		@ guarda valor de r0 no tempo do sistema
+	ldr r1, =SYS_TIME			@ carrega end do tempo do sistema
+	str r0, [r1]				@ guarda valor de r0 no tempo do sistema
 
 	b svc_end
 
@@ -495,6 +495,12 @@ CALLBACK_COUNTER:		.word 0x0
 
 @Contador de alarmes
 ALARMS_COUNTER:			.word 0x0
+
+@ Vetor de trmpo dos alarmes
+ALARM_TIME:                 	.word 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0
+
+@ Vetor de funcoes dos alarmes
+ALARM_FUNC:                 	.fill 32
 
 .skip 600
 @ pilha do usuario
