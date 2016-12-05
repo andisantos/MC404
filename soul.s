@@ -45,6 +45,15 @@ RESET_HANDLER:
    	ldr r1, =ALARMS_COUNTER
    	str r0, [r1]
 
+	@ Zera os vetores de alarme e callbacks
+	ldr r1, =ALARM_TIME
+	mov r2, #0
+	loop:
+		str r0, [r1]
+		add r1, r1, #4
+		add r2, r2, #1
+		cmp r2, #MAX_ALARMS
+		blt loop
 
 @@@@@@ INICIALIZA PILHAS @@@@@@
 
