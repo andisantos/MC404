@@ -1,4 +1,5 @@
 
+
 .align 4
 
 @ Modos de Execução
@@ -204,6 +205,10 @@ SVC_HANDLER:
 	beq svc_set_time21
 	cmp r7, #22
 	beq svc_set_alarm22
+    cmp r7, #63
+    beq svc_change_mode63
+    cmp r7, #64
+    beq svc_change_mode64
 
 svc_end:
 	ldmfd sp!, {r1-r12, lr}
@@ -500,21 +505,156 @@ svc_set_alarm22:
 
 	b svc_end
 
+
+svc_change_mode63:
+    msr cpsr_c, #IRQ_MODE
+    b return_alarm
+
+svc_change_mode64:
+    msr cpsr_c, #IRQ_MODE
+    b return_call
+
+@@@@@@ IRQ @@@@@@
 IRQ_HANDLER:
+    stmfd sp!, {r0-r12, lr}
 
     ldr r1, =GPT_BASE
-
     mov r0, #0x1
     str r0, [r1, #GPT_SR]
 
-    @ incrementa CONTADOR
-    ldr r2, =CONTADOR
+    @ incrementa o tempo do sistema
+    ldr r2, =SYS_TIME
     ldr r0, [r2]
     add r0, #1
     str r0, [r2]
-    sub lr, #4
 
+@ checa se algum alarme tocou
+check_alarms:
+    ldr r0, =ALARM_TIME
+    ldr r1, =ALARM_FUNC
+    ldr r2, =SYS_TIME
+    ldr r2, [r2]
+    ldr r3, =ALARMS_COUNTER
+    ldr r4, [r3]
+    mov r5, #0
+
+    loop_irq_alarm:
+        cmp r4, #0      @ verifica se existem alarmes
+        beq irq_end
+
+        ldr r6, [r0]        @ carrega o alarme atual do vetor ALARM_TIME
+        cmp r6, r2          @ compara o tempo do alarme com o tempo do sistema
+        addhi r0, r0, #4    @ se o tempo do sistema for maior
+        addhi r5, r5, #1    @ pula para outro alarme
+        bhi loop_irq_alarm
+
+    @ alarme tocou
+    mov r6, #0              @ desliga alarme
+    str r6, [r0]
+    sub r4, r4, #1          @ subtrai numero de alarmes
+    str r4, [r3]
+
+    mul r5, r5, #4          @ define posicao do vetor ALARM_FUNC
+    ldr r7, [r1, r5]        @ carrega endereco da funcao a ser chamada
+
+    @ salva o estado atual e chama a funcao
+    stmfd sp!, {r0-r11, lr}
+	mrs r0, SPSR
+	stmfd sp!, {r0}
+    ldr r1, =CALLBACK_ATIVO         @ ativa a callback
+    ldr r2, =0x1
+    str r2, [r1]
+    msr cpsr_c, #USER_MODE          @ muda para o modo usuario
+    blx r7
+
+    mov r7, #63                     @ volta para o modo irq
+    svc 0x0
+
+return_alarm:
+    ldmfd sp!, {r0}
+    msr SPSR, r0
+    ldmfd sp!, {r0-r11, lr}
+    b check_alarms
+
+
+check_callback:
+    ldr r8, =CALLBACK_ID_SONAR
+    ldr r1, =CALLBACK_THRESHOLD
+    ldr r2, =CALLBACK_FUNC
+    mov r3, #0
+    ldr r4, =CALLBACK_COUNTER
+    ldr r5, [r4]
+
+    loop_irq_call:
+        cmp r5, #0              @ verifica se tem callbacks
+        beq irq_end
+
+        cmp r3, #MAX_CALLBACKS  @ verifica se ja percorreu o vetor inteiro
+        bhi irq_end
+
+        ldr r6, [r8]            @ carrega o sonar do vetor CALLBACK_ID_SONAR
+        cmp r6, #16             @ se não tiver um sonar valido
+        addeq r8, r8, #4        @ anda no vetor
+        addeq r3, r3, #1
+        beq loop_irq_call       @ verifica o proximo sonar no vetor
+
+    @ salva o estado atual e le o sonar
+    stmfd sp!, {r1-r11, lr}
+    stmfd sp!, {r6}             @ empilha o sonar a ser lido
+    ldr r1, =CALLBACK_ATIVO
+    mov r2, #1
+    str r2, [r1]
+    mrs r9, SPSR
+	stmfd sp!, {r9}
+
+    mov r7, #16                 @ chama a syscall read_sonar
+    svc 0x0
+
+    ldmfd sp!, {r9}
+	msr SPSR, r9
+    ldr r1, =CALLBACK_ATIVO
+    ldr r2, =0x0
+    str r2, [r1]
+    add sp, sp, #4
+    ldmfd sp!, {r1-r11, lr}
+
+    @ valor lido em r0
+    mul r3, r3, #4
+    ldr r6, [r1, r3]        @ le o limiar do vetor CALLBACK_THRESHOLD
+    cmp r0, r6              @ se a distancia for maior que o limiar
+    bhi irq_end             @ encerra
+
+    ldr r0, [r2, r3]      @ chama a funcao correspondente
+
+    @ salva o estado atual
+    stmfd sp!, {r0-r11, lr}
+    ldr r1, =CALLBACK_ATIVO
+    mov r2, #1
+    str r2, [r1]
+    mrs r10, SPSR
+	stmfd sp!, {r9}
+    msr cpsr_c, #USER_MODE
+    blx r0
+
+    mov r7, #64
+    svc 0x0
+
+return_call:
+    ldr r1, =CALLBACK_ATIVO
+    mov r2, #0
+    str r2, [r1]
+    ldmfd sp!, {r9}
+	msr SPSR, r10
+    ldmfd sp!, {r0-r11, lr}
+
+    b loop_irq_call
+
+
+irq_end:
+    ldmfd sp!,{r0-r12, lr}
+    sub lr, lr, #4
     movs pc, lr
+
 
 
 @@@@@@ DATA @@@@@@
@@ -532,11 +672,14 @@ mask_vels:              	.word 0x7FFE0000
 @Tempo do sistema
 SYS_TIME: 			.word 0x0
 
+@Controla se um callback esta ativo ou nao
+CALLBACK_ATIVO:         .word 0x0
+
 @Contador de call backs
 CALLBACK_COUNTER:		.word 0x0
 
 @Vetor de ID dos sonares passados pra funcao de callback
-CALLBACK_ID_SONAR:		.fill MAX_CALLBACKS, 0x4, 0x0
+CALLBACK_ID_SONAR:		.fill MAX_CALLBACKS, 0x4, 0x16
 
 @vetor de funcoes da callback
 CALLBACK_FUNC:			.fill MAX_CALLBACKS, 0x4, 0x0
