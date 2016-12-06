@@ -26,7 +26,6 @@ interrupt_vector:
 .org 0x100
 .text
 
-
 RESET_HANDLER:
 
 	@Set interrupt table base address on coprocessor 15.
@@ -56,14 +55,14 @@ RESET_HANDLER:
 		blt loop_alarm
 
 
-    ldr r1, =CALLBACK_THRESHOLD
-    mov r2, #0
-    loop_call:
-        str r0, [r1]
-        add r1, r1, #4
-        add r2, r2, #1
-        cmp r2, #MAX_CALLBACKS
-        blt loop_call
+	ldr r1, =CALLBACK_THRESHOLD
+	mov r2, #0
+	loop_call:
+		str r0, [r1]
+		add r1, r1, #4
+		add r2, r2, #1
+		cmp r2, #MAX_CALLBACKS
+		blt loop_call
 
 
 @@@@@@ INICIALIZA PILHAS @@@@@@
@@ -82,7 +81,6 @@ RESET_HANDLER:
 
 
 @@@@@@ GPT @@@@@@
-
 SET_GPT:
 	.set GPT_BASE,				0x53FA0000
 	.set GPT_CR,				0x0
@@ -112,25 +110,6 @@ SET_GPT:
 	@habilitando a interrupcao Output Compare Channel 1
 	mov r0, #0x1
 	str r0, [r1, #GPT_IR]
-
-@@@@@@ GPIO @@@@@@
-SET_GPIO:
-	.set GPIO_BASE, 			0x53F84000
-	.set GPIO_DR,				0x00
-	.set GPIO_GDIR,				0x04
-	.set GPIO_PSR,				0x08
-	.set GDIR_INIT,				0xFFFC003E
-
-	ldr r1, =GPIO_BASE
-
-	@inicializa o registrador de direcoes
-	ldr r0, =GDIR_INIT
-	str r0, [r1, #GPIO_GDIR]
-
-
-	msr cpsr_c, #USER_MODE
-	ldr r1, =USER_TEXT				@ muda para o modo usuario
-	mov pc, r1					@ pula para o codigo do usuario
 
 @@@@@@ TZIC @@@@@@
 SET_TZIC:
@@ -176,7 +155,25 @@ SET_TZIC:
 	str	r0, [r1, #TZIC_INTCTRL]
 
 	msr cpsr_c, #SUPERVISOR_MODE
+	
+@@@@@@ GPIO @@@@@@
+SET_GPIO:
+	.set GPIO_BASE, 			0x53F84000
+	.set GPIO_DR,				0x00
+	.set GPIO_GDIR,				0x04
+	.set GPIO_PSR,				0x08
+	.set GDIR_INIT,				0xFFFC003E
 
+	ldr r1, =GPIO_BASE
+
+	@inicializa o registrador de direcoes
+	ldr r0, =GDIR_INIT
+	str r0, [r1, #GPIO_GDIR]
+
+
+	msr cpsr_c, #USER_MODE
+	ldr r1, =USER_TEXT				@ muda para o modo usuario
+	mov pc, r1					@ pula para o codigo do usuario
 
 @@@@@@ SVC HANDLER @@@@@@
 @ salvar a pilha do usuario e cpsr
