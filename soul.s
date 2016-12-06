@@ -636,7 +636,7 @@ check_callback:
 	
 	mov r7, #4
 	@ valor lido em r0
-	mul r3, r3, #r7
+	mul r3, r3, r7
 	ldr r6, [r1, r3]        @ le o limiar do vetor CALLBACK_THRESHOLD
 	cmp r0, r6              @ se a distancia for maior que o limiar
 	bhi irq_end             @ encerra
