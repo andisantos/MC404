@@ -554,9 +554,12 @@ check_alarms:
 		cmp r5, #MAX_ALARMS      @ se checou todos os alarmes e nao soou nenhum
 		beq irq_end     @ encerra
 
+
 		ldr r6, [r0]        @ carrega o alarme atual do vetor ALARM_TIME
 		cmp r6, #0
-		beq irq_end
+		addeq r0, r0, #4
+		addeq r5, r5, #1
+		beq loop_irq_alarm
 
 		cmp r6, r2          @ compara o tempo do alarme com o tempo do sistema
 		addhi r0, r0, #4    @ se o tempo do sistema for maior
