@@ -131,8 +131,8 @@ SET_GPIO:
 
 
 	msr cpsr_c, #USER_MODE
-	ldr r1, =USER_TEXT				@muda para o modo usuario
-	mov pc, r1					@pula para o codigo do usuario
+	ldr r1, =USER_TEXT				@ muda para o modo usuario
+	mov pc, r1					@ pula para o codigo do usuario
 
 @@@@@@ TZIC @@@@@@
 SET_TZIC:
@@ -189,7 +189,7 @@ SVC_HANDLER:
 	.set MAX_ALARMS, 		8
 	.set MAX_CALLBACKS,		8
 
-	stmfd sp!, {r1-r12,lr}		@ salva os registradores do usuário na pilha do supervisor
+	stmfd sp!, {r1-r12,lr}			@ salva os registradores do usuário na pilha do supervisor
 
 	cmp r7, #16
 	beq svc_read_sonar16
@@ -223,7 +223,7 @@ svc_read_sonar16:
 	ldmfd sp, {r0}
 	msr cpsr_c, #SUPERVISOR_MODE   		@ muda para supervisor
 
-	cmp r0, #15				@verifica se eh um sonar valido
+	cmp r0, #15				@ verifica se eh um sonar valido
 	movhi r0, #-1
 	bhi svc_end
 
@@ -242,7 +242,7 @@ svc_read_sonar16:
 		cmp r3, #0
 		bgt delay_1
 
-	add r2, r2, #0x2 			@TRIGGER = 1
+	add r2, r2, #0x2 			@ TRIGGER = 1
 	str r2, [r1, #GPIO_DR]
 
 	ldr r3, [r1, #GPIO_DR]
@@ -254,19 +254,19 @@ svc_read_sonar16:
         cmp r3, #0
         bgt delay_2
 
-	bic r2, r2, #0x2 			@TRIGGER = 0
+	bic r2, r2, #0x2 			@ TRIGGER = 0
 	str r2, [r1, #GPIO_DR]
 
 verifica_flag:
 	ldr r0, [r1, #GPIO_DR]
-	mov r2, r0 					@isola o bit referente a flag
+	mov r2, r0 				@ isola o bit referente a flag
 	and r2, r2, #1
 
-	cmp r2, #1					@verifica se FLAG = 1
+	cmp r2, #1				@ verifica se FLAG = 1
 	beq flag_ok
 
 	@delay 10 ms
-	ldr r3, =100				@se não for, faz delay 10 ms
+	ldr r3, =100				@ se não for, faz delay 10 ms
 	delay_3:
 		sub r3, r3, #1
 		cmp r3, #0
@@ -295,31 +295,31 @@ svc_register_proximity_callback17:
 	ldmfd sp, {r0-r2}
 	msr cpsr_c, #SUPERVISOR_MODE
 
-	@verifica se o sonar eh valido
+	@ verifica se o sonar eh valido
 	cmp r0, #15
 	movhi r0, #-2
 	bhi svc_end
 
-	@verifica se o numero de callbacks maximo for maior que o MAX_CALLBACKS
+	@ verifica se o numero de callbacks maximo for maior que o MAX_CALLBACKS
 	ldr r3, =CALLBACK_COUNTER
 	ldr r3, [r3]
 	cmp r3, #MAX_CALLBACKS
 	movhi r0, #-1
 	bhi svc_end
 
-	@se nao tiver erro
-	add r4, r4, #1				@incrementa o contador de callbacks
-	str r4, [r3]				@salva no contador
+	@ se nao tiver erro
+	add r4, r4, #1				@ incrementa o contador de callbacks
+	str r4, [r3]				@ salva no contador
 
-	ldr r5, =CALLBACK_ID_SONAR		@endereco do vetor de ids
-	ldr r6, =CALLBACK_THRESHOLD 		@endereco do vetor de limiares
-	ldr r7, =CALLBACK_FUNC			@endereco do vetor de funcoes
+	ldr r5, =CALLBACK_ID_SONAR		@ endereco do vetor de ids
+	ldr r6, =CALLBACK_THRESHOLD 		@ endereco do vetor de limiares
+	ldr r7, =CALLBACK_FUNC			@ endereco do vetor de funcoes
 
-	@loop para encontrar uma posicao livre nos vetores
+	@ loop para encontrar uma posicao livre nos vetores
 	loop_vet_call:
 		mov r3, #0
-		ldr r4, [r6, r3]		@carrega em r4 o valor na posicao do vetor
-		cmp r3, r4			@se r4 != 0, checa a proxima posicao
+		ldr r4, [r6, r3]		@ carrega em r4 o valor na posicao do vetor
+		cmp r3, r4			@ se r4 != 0, checa a proxima posicao
 		addne r3, r3, #4
 		bne loop_vet_call
 
@@ -327,7 +327,7 @@ svc_register_proximity_callback17:
 	str r0, [r5, r3]       			@ Salva o ID do sonar no vetor
 	str r1, [r6, r3]        		@ Salva o limiar no vetor
 	str r2, [r7, r3]        		@ Salva a funcao no vetor
-	mov r0, #0              		@Colocar zero na flag, informando que deu certo
+	mov r0, #0              		@ Colocar zero na flag, informando que deu certo
 
 	b svc_end
 
@@ -500,9 +500,9 @@ svc_set_alarm22:
 	mul r3, r3, r5
 	add r2, r2, r3
 
-	str r0, [r2]			@ salva a funcao do alarme
+	str r0, [r2]				@ salva a funcao do alarme
 
-	ldr r2, =ALARMS_COUNTER		@ atualiza o contador de alarmes
+	ldr r2, =ALARMS_COUNTER			@ atualiza o contador de alarmes
 	ldr r1, [r2]
 	add r1, r1, #1
    	str r1, [r2]
@@ -548,45 +548,45 @@ check_alarms:
 	mov r5, #0
 
 	loop_irq_alarm:
-		cmp r4, #0      @ verifica se existem alarmes
+		cmp r4, #0      		@ verifica se existem alarmes
 		beq irq_end
 
-		cmp r5, #MAX_ALARMS      @ se checou todos os alarmes e nao soou nenhum
-		beq irq_end     @ encerra
+		cmp r5, #MAX_ALARMS      	@ se checou todos os alarmes e nao soou nenhum
+		beq irq_end     		@ encerra
 
 
-		ldr r6, [r0]        @ carrega o alarme atual do vetor ALARM_TIME
+		ldr r6, [r0]       	 	@ carrega o alarme atual do vetor ALARM_TIME
 		cmp r6, #0
 		addeq r0, r0, #4
 		addeq r5, r5, #1
 		beq loop_irq_alarm
 
-		cmp r6, r2          @ compara o tempo do alarme com o tempo do sistema
-		addhi r0, r0, #4    @ se o tempo do sistema for maior
-		addhi r5, r5, #1    @ pula para outro alarme
+		cmp r6, r2          		@ compara o tempo do alarme com o tempo do sistema
+		addhi r0, r0, #4    		@ se o tempo do sistema for maior
+		addhi r5, r5, #1    		@ pula para outro alarme
 		bhi loop_irq_alarm
 
 	@ alarme tocou
-	mov r6, #0              @ desliga alarme
+	mov r6, #0              		@ desliga alarme
 	str r6, [r0]
-	sub r4, r4, #1          @ subtrai numero de alarmes
+	sub r4, r4, #1          		@ subtrai numero de alarmes
 	str r4, [r3]
 
 	mov r8, #4
-	mul r5, r5, r8          @ define posicao do vetor ALARM_FUNC
-	ldr r7, [r1, r5]        @ carrega endereco da funcao a ser chamada
+	mul r5, r5, r8          		@ define posicao do vetor ALARM_FUNC
+	ldr r7, [r1, r5]        		@ carrega endereco da funcao a ser chamada
 
 	@ salva o estado atual e chama a funcao
 	stmfd sp!, {r0-r11, lr}
 	mrs r0, SPSR
 	stmfd sp!, {r0}
-	ldr r1, =CALLBACK_ATIVO         @ ativa a callback
+	ldr r1, =CALLBACK_ATIVO         	@ ativa a callback
 	ldr r2, =0x1
 	str r2, [r1]
-	msr cpsr_c, #USER_MODE          @ muda para o modo usuario
+	msr cpsr_c, #USER_MODE          	@ muda para o modo usuario
 	blx r7
 
-	mov r7, #63                     @ volta para o modo irq
+	mov r7, #63                    		@ volta para o modo irq
 	svc 0x0
 
 return_alarm:
@@ -605,28 +605,28 @@ check_callback:
 	ldr r5, [r4]
 
 	loop_irq_call:
-		cmp r5, #0              @ verifica se tem callbacks
+		cmp r5, #0              	@ verifica se tem callbacks
 		beq irq_end
 
-		cmp r3, #MAX_CALLBACKS  @ verifica se ja percorreu o vetor inteiro
+		cmp r3, #MAX_CALLBACKS  	@ verifica se ja percorreu o vetor inteiro
 		bhi irq_end
 
-		ldr r6, [r8]            @ carrega o sonar do vetor CALLBACK_ID_SONAR
-		cmp r6, #16             @ se não tiver um sonar valido
-		addeq r8, r8, #4        @ anda no vetor
+		ldr r6, [r8]            	@ carrega o sonar do vetor CALLBACK_ID_SONAR
+		cmp r6, #16             	@ se não tiver um sonar valido
+		addeq r8, r8, #4        	@ anda no vetor
 		addeq r3, r3, #1
-		beq loop_irq_call       @ verifica o proximo sonar no vetor
+		beq loop_irq_call       	@ verifica o proximo sonar no vetor
 
 	@ salva o estado atual e le o sonar
 	stmfd sp!, {r1-r11, lr}
-	stmfd sp!, {r6}             @ empilha o sonar a ser lido
+	stmfd sp!, {r6}             		@ empilha o sonar a ser lido
 	ldr r1, =CALLBACK_ATIVO
 	mov r2, #1
 	str r2, [r1]
 	mrs r9, SPSR
 	stmfd sp!, {r9}
 
-	mov r7, #16                 @ chama a syscall read_sonar
+	mov r7, #16                 		@ chama a syscall read_sonar
 	svc 0x0
 
 	ldmfd sp!, {r9}
@@ -639,12 +639,12 @@ check_callback:
 	
 	mov r7, #4
 	@ valor lido em r0
-	mul r3, r3, #r7
-	ldr r6, [r1, r3]        @ le o limiar do vetor CALLBACK_THRESHOLD
-	cmp r0, r6              @ se a distancia for maior que o limiar
-	bhi irq_end             @ encerra
+	mul r3, r3, r7
+	ldr r6, [r1, r3]        		@ le o limiar do vetor CALLBACK_THRESHOLD
+	cmp r0, r6              		@ se a distancia for maior que o limiar
+	bhi irq_end             		@ encerra
 
-	ldr r0, [r2, r3]      @ chama a funcao correspondente
+	ldr r0, [r2, r3]      			@ chama a funcao correspondente
 
 	@ salva o estado atual
 	stmfd sp!, {r0-r11, lr}
