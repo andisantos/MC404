@@ -1,5 +1,3 @@
-
-
 .align 4
 
 @ Modos de Execução
