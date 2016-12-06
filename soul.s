@@ -711,14 +711,14 @@ ALARM_TIME:                 	.word 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0
 @ Vetor de funcoes dos alarmes
 ALARM_FUNC:                 	.fill 32
 
-.skip 1024
+.skip 900
 @ pilha do usuario
 PILHA_USUARIO:
 
-.skip 1024
+.skip 900
 @ pilha do Supervisor
 PILHA_SUPERVISOR:
 
-.skip 1024
+.skip 900
 @ pilha do irq
 PILHA_IRQ:
