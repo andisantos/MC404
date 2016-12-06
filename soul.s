@@ -2,9 +2,9 @@
 
 @ Modos de Execução
 .set USER_MODE,         	 0x10
-.set IRQ_MODE,          	 0x12
+.set IRQ_MODE,          	 0xD2
 .set SUPERVISOR_MODE,    	 0x13
-.set SYS_MODE,            	 0x3F
+.set SYS_MODE,            	 0x1F
 .set USER_TEXT,			 0x77802000
 .org 0x0
 .section .iv,"a"
