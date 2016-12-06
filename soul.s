@@ -2,8 +2,10 @@
 
 @ Modos de Execução
 .set USER_MODE,         	 0x10
+.set USER_NOINT,			 0xD0
 .set IRQ_MODE,          	 0xD2
 .set SUPERVISOR_MODE,    	 0x13
+.set SUPERVISOR_NOINT,		 0xD3
 .set SYS_MODE,            	 0x1F
 .set USER_TEXT,			 0x77802000
 .org 0x0
@@ -202,24 +204,23 @@ SVC_HANDLER:
 	beq svc_set_alarm22
 	cmp r7, #63
 	beq svc_change_mode63
-	cmp r7, #64
-	beq svc_change_mode64
 
 svc_end:
 	ldmfd sp!, {r1-r12, lr}
-    	movs pc, lr
+    movs pc, lr
 
 @@@@@ READ_SONAR @@@@@@
 @ in: r0 = indentificador do sonar (0 a 15)
 @ out: r0 = valor obtido pelos sonares
 @	    -1 caso o identificador do sonar for invalido
 svc_read_sonar16:
-	cmp r1, #IRQ_MODE
+	mov r9, r1
+	cmp r9, #IRQ_MODE
 	beq irq_sonar
 
-    	msr cpsr_c, #SYS_MODE      		@ muda para system
+    msr cpsr_c, #SYS_MODE      		@ muda para system
 	ldmfd sp, {r0}
-	msr cpsr_c, #SUPERVISOR_MODE   		@ muda para supervisor
+	msr cpsr_c, #SUPERVISOR_NOINT   		@ muda para supervisor
 
 irq_sonar:
 	cmp r0, #15				@ verifica se eh um sonar valido
@@ -279,7 +280,9 @@ flag_ok:
 	ldr r1, [r1]
 	and r0, r0, r1 				@ r0 = distancia lida no sonar
 
-	b svc_end
+	cmp r9, #IRQ_MODE
+	bne svc_end
+	ldmfd sp!, {r1-r12, pc}
 
 
 @@@@@@ REGISTER PROXIMITY @@@@@@
@@ -292,7 +295,7 @@ flag_ok:
 svc_register_proximity_callback17:
 	msr cpsr_c, #SYS_MODE
 	ldmfd sp, {r0-r2}
-	msr cpsr_c, #SUPERVISOR_MODE
+	msr cpsr_c, #SUPERVISOR_NOINT
 
 	@ verifica se o sonar eh valido
 	cmp r0, #15
@@ -341,7 +344,7 @@ svc_set_motor_speed18:
 
 	ldmfd sp, {r0, r1}
 
-	msr cpsr_c, #SUPERVISOR_MODE      	@ muda para supervisor
+	msr cpsr_c, #SUPERVISOR_NOINT      	@ muda para supervisor
 
    	cmp r1, #63				@ confere se velocidade é menor que 63
 	movhi r0, #-2				@ se não retorna -2
@@ -374,6 +377,7 @@ set_motor1:
 	str r3, [r2, #GPIO_DR]			@ guarda o valor em DR
 	mov r0, #0
 
+
 	b svc_end
 
 
@@ -387,8 +391,7 @@ set_motor1:
 svc_set_motors_speed19:
 	msr cpsr_c, #SYS_MODE			@ muda para system
 	ldmfd sp, {r0, r1}
-
-	msr cpsr_c, #SUPERVISOR_MODE       	@ muda para supervisor
+	msr cpsr_c, #SUPERVISOR_NOINT       	@ muda para supervisor
 
 	@ verifica se a velocidade do motor 1 eh valida
 	cmp r0, #63
@@ -424,12 +427,9 @@ svc_set_motors_speed19:
 @ in: -
 @ out: r0 = tempo do sistema
 svc_get_time20:
-	@ muda para system
    	msr cpsr_c, #SYS_MODE
    	ldmfd sp, {r0}
-
-	@ muda para supervisor
-	msr cpsr_c, #SUPERVISOR_MODE
+	msr cpsr_c, #SUPERVISOR_NOINT
 
 	ldr r1, =SYS_TIME			@ carrega end do tempo do sistema
 	ldr r0, [r1]				@ carrega em r0 o tempo do sistema
@@ -441,12 +441,9 @@ svc_get_time20:
 @ in: r0 = tempo do sistema
 @ out: -
 svc_set_time21:
-	@ muda para system
 	msr cpsr_c, #SYS_MODE
 	ldmfd sp, {r0}
-
-	@ muda para supervisor
-	msr cpsr_c, #SUPERVISOR_MODE
+	msr cpsr_c, #SUPERVISOR_NOINT
 
 	ldr r1, =SYS_TIME			@ carrega end do tempo do sistema
 	str r0, [r1]				@ guarda valor de r0 no tempo do sistema
@@ -464,7 +461,7 @@ svc_set_alarm22:
 	msr cpsr_c, #SYS_MODE			@ muda para system
 	ldmfd sp, {r0, r1}
 
-	msr cpsr_c, #SUPERVISOR_MODE		@ muda para supervisor
+	msr cpsr_c, #SUPERVISOR_NOINT		@ muda para supervisor
 
    	ldr r2, =ALARMS_COUNTER
 	ldr r2, [r2]
@@ -511,16 +508,10 @@ svc_set_alarm22:
 	b svc_end
 
 @@@@@@ MUDA PARA MODO IRQ @@@@@@
-@ Funcao para retornar ao modo IRQ apos executar a funcao do alarme
+@ Funcao para retornar ao modo IRQ apos executar a funcao do alarme/callback
 svc_change_mode63:
-	msr cpsr_c, #IRQ_MODE
-	b return_alarm
+	ldmfd sp!, {r1-r12, pc}
 
-@@@@@@ MUDA PARA MODO IRQ @@@@@@
-@ Funcao para retornar ao modo IRQ apos executar a funcao do callback
-svc_change_mode64:
-	msr cpsr_c, #IRQ_MODE
-	b return_call
 
 @@@@@@ IRQ @@@@@@
 IRQ_HANDLER:
@@ -581,13 +572,13 @@ check_alarms:
 	ldr r1, =CALLBACK_ATIVO         	@ ativa a callback
 	ldr r2, =0x1
 	str r2, [r1]
-	msr cpsr_c, #USER_MODE          	@ muda para o modo usuario
+	msr cpsr_c, #USER_NOINT          	@ muda para o modo usuario
 	blx r7
 
 	mov r7, #63                    		@ volta para o modo irq
 	svc 0x0
+	msr cpsr_c, #IRQ_MODE
 
-return_alarm:
 	ldmfd sp!, {r0}
 	msr SPSR, r0
 	ldmfd sp!, {r0-r11, lr}
@@ -624,6 +615,8 @@ check_callback:
 		mov r7, #16                 		@ chama a syscall read_sonar
 		svc 0x0					@ valor lido em r0
 
+		msr cpsr_c, #IRQ_MODE
+
 		ldmfd sp!, {r9}				@ recupera estado da maquina
 		msr SPSR, r9
 		ldr r1, =CALLBACK_ATIVO			@ desativa a callback
@@ -645,20 +638,20 @@ check_callback:
 		ldr r1, =CALLBACK_ATIVO			@ sinaliza que tem uma callback ativa
 		mov r2, #1
 		str r2, [r1]
-		mrs r10, SPSR
+		mrs r9, SPSR
 		stmfd sp!, {r9}
-		msr cpsr_c, #USER_MODE			@ muda para a funcao do usuario
+		msr cpsr_c, #USER_NOINT			@ muda para a funcao do usuario
 		blx r0
 
-		mov r7, #64				@ muda para o modo IRQ
+		mov r7, #63				@ muda para o modo IRQ
 		svc 0x0
+		MSR cpsr_c, #IRQ_MODE
 
-	return_call:
 		ldr r1, =CALLBACK_ATIVO			@ desativa callback
 		mov r2, #0
 		str r2, [r1]
 		ldmfd sp!, {r9}
-		msr SPSR, r10
+		msr SPSR, r9
 		ldmfd sp!, {r0-r11, lr}			@ recupera estado da maquina
 
 		@ le o proximo sonar
