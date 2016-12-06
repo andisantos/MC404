@@ -551,25 +551,32 @@ check_alarms:
 		cmp r4, #0      @ verifica se existem alarmes
 		beq irq_end
 
-	ldr r6, [r0]        @ carrega o alarme atual do vetor ALARM_TIME
-	cmp r6, r2          @ compara o tempo do alarme com o tempo do sistema
-	addhi r0, r0, #4    @ se o tempo do sistema for maior
-	addhi r5, r5, #1    @ pula para outro alarme
-	bhi loop_irq_alarm
+		cmp r5, #MAX_ALARMS      @ se checou todos os alarmes e nao soou nenhum
+		beq irq_end     @ encerra
+
+		ldr r6, [r0]        @ carrega o alarme atual do vetor ALARM_TIME
+		cmp r6, #0
+		beq irq_end
+
+		cmp r6, r2          @ compara o tempo do alarme com o tempo do sistema
+		addhi r0, r0, #4    @ se o tempo do sistema for maior
+		addhi r5, r5, #1    @ pula para outro alarme
+		bhi loop_irq_alarm
 
 	@ alarme tocou
 	mov r6, #0              @ desliga alarme
 	str r6, [r0]
 	sub r4, r4, #1          @ subtrai numero de alarmes
 	str r4, [r3]
-	mov r7, #4
-	mul r5, r5, r7          @ define posicao do vetor ALARM_FUNC
+
+	mov r8, #4
+	mul r5, r5, r8          @ define posicao do vetor ALARM_FUNC
 	ldr r7, [r1, r5]        @ carrega endereco da funcao a ser chamada
 
 	@ salva o estado atual e chama a funcao
 	stmfd sp!, {r0-r11, lr}
-		mrs r0, SPSR
-		stmfd sp!, {r0}
+	mrs r0, SPSR
+	stmfd sp!, {r0}
 	ldr r1, =CALLBACK_ATIVO         @ ativa a callback
 	ldr r2, =0x1
 	str r2, [r1]
