@@ -214,10 +214,14 @@ svc_end:
 @ out: r0 = valor obtido pelos sonares
 @	    -1 caso o identificador do sonar for invalido
 svc_read_sonar16:
+	cmp r1, #IRQ_MODE
+	beq irq_sonar
+	
     	msr cpsr_c, #SYS_MODE      		@ muda para system
 	ldmfd sp, {r0}
 	msr cpsr_c, #SUPERVISOR_MODE   		@ muda para supervisor
 
+irq_sonar:
 	cmp r0, #15				@ verifica se eh um sonar valido
 	movhi r0, #-1
 	bhi svc_end
@@ -314,7 +318,7 @@ svc_register_proximity_callback17:
 	mov r3, #0
 	loop_vet_call:
 		ldr r4, [r6, r3]		@ carrega em r4 o valor na posicao do vetor
-		cmp r4, #0				@ se r4 != 0, checa a proxima posicao
+		cmp r4, #0			@ se r4 != 0, checa a proxima posicao
 		addne r3, r3, #4
 		bne loop_vet_call
 
@@ -369,6 +373,7 @@ set_motor1:
 	orr r3, r3, r1				@ seta a velocidade em r3
 	str r3, [r2, #GPIO_DR]			@ guarda o valor em DR
 	mov r0, #0
+	
 	b svc_end
 
 
@@ -543,10 +548,10 @@ check_alarms:
 
 	loop_irq_alarm:
 		cmp r4, #0      		@ verifica se existem alarmes
-		beq irq_end
+		beq check_callback
 
 		cmp r5, #MAX_ALARMS      	@ se checou todos os alarmes e nao soou nenhum
-		beq irq_end     		@ encerra
+		beq check_callback     		@ encerra
 
 
 		ldr r6, [r0]       	 	@ carrega o alarme atual do vetor ALARM_TIME
@@ -599,69 +604,68 @@ check_callback:
 	ldr r5, [r4]
 
 	loop_irq_call:
-		cmp r5, #0              	@ verifica se tem callbacks
+		cmp r5, #0              		@ verifica se tem callbacks
 		beq irq_end
 
-		cmp r3, #MAX_CALLBACKS  	@ verifica se ja percorreu o vetor inteiro
-		bhi irq_end
+		cmp r3, r5  				@ verifica se ja percorreu o vetor inteiro
+		beq irq_end
 
-		ldr r6, [r8]            	@ carrega o sonar do vetor CALLBACK_ID_SONAR
-		cmp r6, #16             	@ se não tiver um sonar valido
-		addeq r8, r8, #4        	@ anda no vetor
-		addeq r3, r3, #1
-		beq loop_irq_call       	@ verifica o proximo sonar no vetor
+		ldr r6, [r8]            		@ carrega o sonar do vetor CALLBACK_ID_SONAR
+		
+		stmfd sp!, {r1-r11, lr}			@ salva estado atual da maquina
+		ldr r1, =CALLBACK_ATIVO			@ sinaliza que tem uma callback ativa
+		mov r2, #1
+		str r2, [r1]
+		mrs r9, SPSR
+		stmfd sp!, {r9}
+		
+		mov r0, r6				@ coloca sonar no parametro r0
+		mov r1, #IRQ_MODE			@ sinaliza que foi chamado por irq
+		mov r7, #16                 		@ chama a syscall read_sonar
+		svc 0x0					@ valor lido em r0
 
-	@ salva o estado atual e le o sonar
-	stmfd sp!, {r1-r11, lr}
-	stmfd sp!, {r6}             		@ empilha o sonar a ser lido
-	ldr r1, =CALLBACK_ATIVO
-	mov r2, #1
-	str r2, [r1]
-	mrs r9, SPSR
-	stmfd sp!, {r9}
+		ldmfd sp!, {r9}				@ recupera estado da maquina
+		msr SPSR, r9
+		ldr r1, =CALLBACK_ATIVO			@ desativa a callback
+		ldr r2, =0x0
+		str r2, [r1]
+		ldmfd sp!, {r1-r11, lr}
+		
+		mov r7, #4
+		mul r3, r3, r7
+		ldr r6, [r1, r3]        		@ le o limiar do vetor CALLBACK_THRESHOLD
+		
+		cmp r0, r6              		@ se a distancia for maior que o limiar
+		addhi r8, r8, #4			@ le a proxima callback
+		addhi r3, r3, #1
+		bhi loop_irq_call             		
 
-	mov r7, #16                 		@ chama a syscall read_sonar
-	svc 0x0
+		ldr r0, [r2, r3]      			@ chama a funcao correspondente
 
-	ldmfd sp!, {r9}
-	msr SPSR, r9
-	ldr r1, =CALLBACK_ATIVO
-	ldr r2, =0x0
-	str r2, [r1]
-	add sp, sp, #4
-	ldmfd sp!, {r1-r11, lr}
+		stmfd sp!, {r0-r11, lr}			@ salva o estado atual da maquina
+		ldr r1, =CALLBACK_ATIVO			@ sinaliza que tem uma callback ativa
+		mov r2, #1
+		str r2, [r1]
+		mrs r10, SPSR
+		stmfd sp!, {r9}
+		msr cpsr_c, #USER_MODE			@ muda para a funcao do usuario
+		blx r0
+
+		mov r7, #64				@ muda para o modo IRQ
+		svc 0x0
+
+	return_call:
+		ldr r1, =CALLBACK_ATIVO			@ desativa callback
+		mov r2, #0
+		str r2, [r1]
+		ldmfd sp!, {r9}
+		msr SPSR, r10
+		ldmfd sp!, {r0-r11, lr}			@ recupera estado da maquina
 	
-	mov r7, #4
-	@ valor lido em r0
-	mul r3, r3, r7
-	ldr r6, [r1, r3]        		@ le o limiar do vetor CALLBACK_THRESHOLD
-	cmp r0, r6              		@ se a distancia for maior que o limiar
-	bhi irq_end             		@ encerra
+		add r8, r8, #4				@ le o proximo sonar
+		add r3, r3, #1
+		b loop_irq_call
 
-	ldr r0, [r2, r3]      			@ chama a funcao correspondente
-
-	@ salva o estado atual
-	stmfd sp!, {r0-r11, lr}
-	ldr r1, =CALLBACK_ATIVO
-	mov r2, #1
-	str r2, [r1]
-	mrs r10, SPSR
-	stmfd sp!, {r9}
-	msr cpsr_c, #USER_MODE
-	blx r0
-
-	mov r7, #64
-	svc 0x0
-
-return_call:
-	ldr r1, =CALLBACK_ATIVO
-	mov r2, #0
-	str r2, [r1]
-	ldmfd sp!, {r9}
-	msr SPSR, r10
-	ldmfd sp!, {r0-r11, lr}
-
-	b loop_irq_call
 
 
 irq_end:
