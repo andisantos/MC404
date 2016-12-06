@@ -466,9 +466,10 @@ svc_set_alarm22:
 	ldmfd sp, {r0, r1}
 
 	msr cpsr_c, #SUPERVISOR_MODE		@ muda para supervisor
-	ldr r2, =ALARMS_COUNTER
-	ldr r2, [ŕ2]
-	
+
+   	ldr r2, =ALARMS_COUNTER
+	ldr r2, [r2]
+
 	@ checa se o numero de alarmes ligados for maior que MAX_ALARMS
 	cmp r2, #MAX_ALARMS
 	moveq r0, #-1
@@ -481,18 +482,19 @@ svc_set_alarm22:
 
 	@ carrega o próximo espaço vazio no vetor de tempos dos alarmes
 	ldr r2, =ALARM_TIME
-	ldr r4, [r2]
 	mov r3, #0
-	
+
 	loop_vet_alarm:
-		cmp r4, #0
+        ldr r4, [r2]
+        cmp r4, #0
 		addhi r2, r2, #4
 		addhi r3, r3, #1
 		bhi loop_vet_alarm
 
 	@ salva o tempo do alarme
 	str r1, [r2]
-	mov r5, #4
+    	mov r5, #4
+
 	@ carrega o próximo espaço vazio no vetor de funcoes dos alarmes
 	ldr r2, =ALARM_FUNC
 	mul r3, r3, r5
@@ -500,9 +502,10 @@ svc_set_alarm22:
 
 	str r0, [r2]			@ salva a funcao do alarme
 
-	ldr r1, =ALARMS_COUNTER		@ atualiza o contador de alarmes
-	ldr r1, [r1]
+	ldr r2, =ALARMS_COUNTER		@ atualiza o contador de alarmes
+	ldr r1, [r2]
 	add r1, r1, #1
+   	str r1, [r2]
 
 	mov r0, #0
 
