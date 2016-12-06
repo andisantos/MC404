@@ -297,8 +297,8 @@ svc_register_proximity_callback17:
 
 	@ verifica se o numero de callbacks maximo for maior que o MAX_CALLBACKS
 	ldr r3, =CALLBACK_COUNTER
-	ldr r3, [r3]
-	cmp r3, #MAX_CALLBACKS
+	ldr r4, [r3]
+	cmp r4, #MAX_CALLBACKS
 	movhi r0, #-1
 	bhi svc_end
 
@@ -309,12 +309,12 @@ svc_register_proximity_callback17:
 	ldr r5, =CALLBACK_ID_SONAR		@ endereco do vetor de ids
 	ldr r6, =CALLBACK_THRESHOLD 		@ endereco do vetor de limiares
 	ldr r7, =CALLBACK_FUNC			@ endereco do vetor de funcoes
-
+	
 	@ loop para encontrar uma posicao livre nos vetores
+	mov r3, #0
 	loop_vet_call:
-		mov r3, #0
 		ldr r4, [r6, r3]		@ carrega em r4 o valor na posicao do vetor
-		cmp r3, r4			@ se r4 != 0, checa a proxima posicao
+		cmp r4, #0				@ se r4 != 0, checa a proxima posicao
 		addne r3, r3, #4
 		bne loop_vet_call
 
@@ -325,7 +325,6 @@ svc_register_proximity_callback17:
 	mov r0, #0              		@ Colocar zero na flag, informando que deu certo
 
 	b svc_end
-
 
 @@@@@ MOTOR SPEED @@@@@@
 @ in: r0 = identificador do motor (0 ou 1)
