@@ -427,7 +427,6 @@ svc_set_motors_speed19:
 @ in: -
 @ out: r0 = tempo do sistema
 svc_get_time20:
-   	msr cpsr_c, #SYS_MODE
    	ldmfd sp, {r0}
 	msr cpsr_c, #SUPERVISOR_NOINT
 
@@ -524,7 +523,7 @@ IRQ_HANDLER:
 	@ incrementa o tempo do sistema
 	ldr r2, =SYS_TIME
 	ldr r0, [r2]
-	add r0, #1
+	add r0, r0, #1
 	str r0, [r2]
 
 @ checa se algum alarme tocou
