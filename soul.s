@@ -2,7 +2,7 @@
 
 @ Modos de Execução
 .set USER_MODE,         	 0x10
-.set USER_NOINT,			 0xD0
+.set USER_NOINT,		 0xD0
 .set IRQ_MODE,          	 0xD2
 .set SUPERVISOR_MODE,    	 0x13
 .set SUPERVISOR_NOINT,		 0xD3
@@ -207,7 +207,7 @@ SVC_HANDLER:
 
 svc_end:
 	ldmfd sp!, {r1-r12, lr}
-    movs pc, lr
+    	movs pc, lr
 
 @@@@@ READ_SONAR @@@@@@
 @ in: r0 = indentificador do sonar (0 a 15)
@@ -282,6 +282,7 @@ flag_ok:
 
 	cmp r9, #IRQ_MODE
 	bne svc_end
+	
 	ldmfd sp!, {r1-r12, pc}
 
 
@@ -376,7 +377,6 @@ set_motor1:
 	orr r3, r3, r1				@ seta a velocidade em r3
 	str r3, [r2, #GPIO_DR]			@ guarda o valor em DR
 	mov r0, #0
-
 
 	b svc_end
 
