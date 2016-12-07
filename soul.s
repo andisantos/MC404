@@ -71,15 +71,15 @@ RESET_HANDLER:
 
 	@ inicializa PILHA_USUARIO
 	msr cpsr_c, #SYS_MODE
-	ldr sp, =PILHA_USUARIO
+	ldr sp, =0x77805000
 
 	@ inicializa PILHA_IRQ
 	msr cpsr_c, #IRQ_MODE
-	ldr sp, =PILHA_IRQ
+	ldr sp, =0x77806000
 
 	@ inicializa PILHA_SUPERVISOR
 	msr cpsr_c, #SUPERVISOR_MODE
-	ldr sp, =PILHA_SUPERVISOR
+	ldr sp, =0x77808000
 
 
 @@@@@@ GPT @@@@@@
@@ -282,8 +282,6 @@ flag_ok:
 
 	cmp r9, #IRQ_MODE
 	bne svc_end
-	
-	ldmfd sp!, {r1-r12, pc}
 
 
 @@@@@@ REGISTER PROXIMITY @@@@@@
@@ -706,15 +704,3 @@ ALARM_TIME:                 	.word 0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0
 
 @ Vetor de funcoes dos alarmes
 ALARM_FUNC:                 	.fill 32
-
-.skip 900
-@ pilha do usuario
-PILHA_USUARIO:
-
-.skip 900
-@ pilha do Supervisor
-PILHA_SUPERVISOR:
-
-.skip 900
-@ pilha do irq
-PILHA_IRQ:
