@@ -528,8 +528,6 @@ IRQ_HANDLER:
 check_alarms:
 	ldr r0, =ALARM_TIME
 	ldr r1, =ALARM_FUNC
-	ldr r2, =SYS_TIME
-	ldr r2, [r2]
 	ldr r3, =ALARMS_COUNTER
 	ldr r4, [r3]
 	mov r5, #0
@@ -542,13 +540,14 @@ check_alarms:
 		cmp r5, #MAX_ALARMS      	@ se checou todos os alarmes e nao soou nenhum
 		beq check_callback     		@ encerra
 
-
 		ldr r6, [r0,r8]       	 	@ carrega o alarme atual do vetor ALARM_TIME
 		cmp r6, #0
 		addeq r8, r8, #4
 		addeq r5, r5, #1
 		beq loop_irq_alarm
-
+		
+		ldr r2, =SYS_TIME
+		ldr r2, [r2]
 		cmp r6, r2          		@ compara o tempo do alarme com o tempo do sistema
 		addhi r8, r8, #4    		@ se o tempo do sistema for maior
 		addhi r5, r5, #1    		@ pula para outro alarme
